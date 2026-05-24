@@ -3,6 +3,7 @@ cli/cli.py
 The `scraut` CLI tool. Install with: pip install scraut
 Provides developer-friendly commands for daily Scraut interactions.
 """
+import os
 import click
 import webbrowser
 from datetime import date
@@ -208,6 +209,174 @@ def velocity(sprint):
 
     except Exception as e:
         click.echo(f"Error: {e}", err=True)
+
+
+@cli.command()
+def init():
+    """Interactive first-time setup wizard. Run once after cloning Scraut.
+
+    Creates workspace/scraut.yml, the full directory skeleton, and optionally
+    creates GitHub labels if GITHUB_TOKEN is set.
+
+    Example: scraut init
+    """
+    import yaml
+
+    click.echo("\n" + "=" * 52)
+    click.echo("  Scraut Setup Wizard")
+    click.echo("=" * 52)
+    click.echo("Answers populate workspace/scraut.yml.")
+    click.echo("Press Enter to accept defaults.\n")
+
+    repo = click.prompt("GitHub repository (org/repo)", default="your-org/your-repo")
+    raw_team = click.prompt("Team member GitHub logins (comma-separated)")
+    logins = [l.strip() for l in raw_team.split(",") if l.strip()]
+    po = click.prompt("Product owner login", default=logins[0] if logins else "")
+    sm = click.prompt("Scrum master login", default=logins[0] if logins else "")
+    channel = click.prompt("Slack channel", default="#scraut-bot")
+    sprint_days = click.prompt("Sprint length in days", default=14, type=int)
+    timezone = click.prompt("Timezone (IANA format, e.g. UTC, Asia/Jakarta)", default="UTC")
+    provider = click.prompt(
+        "LLM provider",
+        type=click.Choice(["anthropic", "openai", "gemini", "ollama"]),
+        default="anthropic",
+    )
+    slack_webhook = click.prompt("Slack webhook URL (optional, Enter to skip)", default="")
+
+    _model = {
+        "anthropic": "claude-sonnet-4-6", "openai": "gpt-4o",
+        "gemini": "gemini-1.5-pro", "ollama": "llama3",
+    }[provider]
+    _key = {
+        "anthropic": "ANTHROPIC_API_KEY", "openai": "OPENAI_API_KEY",
+        "gemini": "GOOGLE_API_KEY", "ollama": "(no key needed)",
+    }[provider]
+
+    members = [
+        {
+            "login": l,
+            "display": l.replace("-", " ").title(),
+            "role": "developer",
+            "slack_id": "",
+            "email": "",
+        }
+        for l in logins
+    ]
+
+    config = {
+        "sprint": {
+            "length_days": sprint_days,
+            "start_day": "monday",
+            "start_time": "09:00",
+            "timezone": timezone,
+            "capacity_buffer": 0.85,
+            "current_sprint": 1,
+        },
+        "team": {
+            "members": members,
+            "product_owner": po,
+            "scrum_master": sm,
+            "slack_channel": channel,
+        },
+        "ceremonies": {
+            "planning": True, "standup": True, "grooming": True,
+            "review": True, "retrospective": True, "estimation": True,
+        },
+        "definition_of_done": [
+            "Tests written for new functionality",
+            "PR reviewed by at least one team member",
+            "Acceptance criteria mentioned in PR description",
+            "No open review comments",
+            "CI passing",
+        ],
+        "repos": [],
+        "llm": {
+            "provider": provider,
+            "model": _model,
+            "base_url": "",
+            "max_tokens": 1000,
+            "cost_controls": {"max_daily_tokens": 100000, "batch_where_possible": True},
+        },
+        "agents": {"enabled": False},
+        "notifications": {
+            "slack_webhook": slack_webhook,
+            "morning_dm": True,
+            "weekly_email": False,
+            "stakeholder_emails": [],
+        },
+        "portal": {
+            "enabled": True,
+            "title": f"{repo.split('/')[0]} Dashboard",
+            "public": True,
+            "refresh_minutes": 30,
+        },
+        "suggestions": {"enabled": True, "min_evidence_count": 3, "measurement_sprints": 2},
+        "paths": {"workspace": "workspace", "scraut": ".scraut", "portal": "apps/portal"},
+    }
+
+    # Write workspace/scraut.yml
+    workspace = Path("workspace")
+    workspace.mkdir(exist_ok=True)
+    config_file = workspace / "scraut.yml"
+    with open(config_file, "w") as f:
+        yaml.dump(config, f, default_flow_style=False, sort_keys=False, allow_unicode=True)
+    click.echo(f"\n  created  workspace/scraut.yml")
+
+    # Workspace directories
+    for d in [
+        "team", "okr", "customer", "knowledge", "milestones",
+        "sprint/01/standup", "sprint/01/retrospective",
+        "sprint/01/grooming", "sprint/01/decisions", "sprint/01/adr",
+    ]:
+        p = workspace / d
+        p.mkdir(parents=True, exist_ok=True)
+        (p / ".gitkeep").touch()
+
+    # .scraut directories (bot-generated output)
+    scraut_root = Path(".scraut")
+    for d in [
+        "sprint/01/standup/summary", "sprint/01/review",
+        "sprint/01/code", "sprint/01/incidents",
+        "insights", "milestones",
+        "suggestions/active", "suggestions/implemented", "suggestions/resolved",
+    ]:
+        p = scraut_root / d
+        p.mkdir(parents=True, exist_ok=True)
+        (p / ".gitkeep").touch()
+
+    click.echo("  created  workspace/ and .scraut/ directory structure")
+
+    # GitHub labels (requires GITHUB_TOKEN)
+    if repo != "your-org/your-repo" and os.environ.get("GITHUB_TOKEN"):
+        click.echo("\n  Creating GitHub labels...")
+        try:
+            from scraut.platform.setup.create_labels import main as create_labels
+            create_labels(repo, str(config_file))
+            click.echo("  GitHub labels created")
+        except Exception as e:
+            click.echo(f"  Warning: {e}")
+            click.echo(f"  Run later: python apps/automation/scraut/platform/setup/create_labels.py --repo {repo}")
+    else:
+        msg = "GITHUB_TOKEN not set" if repo != "your-org/your-repo" else "placeholder repo — skipping"
+        click.echo(f"\n  Skipping label creation ({msg})")
+        if repo != "your-org/your-repo":
+            click.echo(f"  Run later: python apps/automation/scraut/platform/setup/create_labels.py --repo {repo}")
+
+    click.echo("\n" + "=" * 52)
+    click.echo("  Done! Next steps:\n")
+    click.echo(f"  1. Edit workspace/scraut.yml")
+    click.echo(f"       Fill in slack_id and email for each team member.")
+    click.echo(f"\n  2. Set GitHub Secrets  (Settings → Secrets → Actions)")
+    click.echo(f"       [ ] {_key}")
+    click.echo(f"       [ ] SLACK_WEBHOOK")
+    click.echo(f"       [ ] SLACK_BOT_TOKEN")
+    click.echo(f"\n  3. Create Sprint 1")
+    click.echo(f"       python apps/automation/scraut/scrum/sprint/create_sprint.py \\")
+    click.echo(f"              --sprint 1 --repo {repo}")
+    click.echo(f"\n  4. Commit and push")
+    click.echo(f"       git add . && git commit -m 'chore: scraut setup [skip ci]' && git push")
+    click.echo(f"\n  5. Trigger sprint-planning from GitHub Actions UI")
+    click.echo("")
 
 
 def main():
