@@ -1,13 +1,18 @@
 {
   "name": "create-scraut",
-  "version": "1.0.0",
+  "version": "0.0.1",
   "description": "Set up Scraut — Scrum Automation — in 5 minutes",
   "bin": {
     "create-scraut": "./bin/create-scraut.js"
   },
   "main": "index.js",
   "type": "module",
-  "keywords": ["scrum", "automation", "github", "agile"],
+  "keywords": [
+    "scrum",
+    "automation",
+    "github",
+    "agile"
+  ],
   "dependencies": {
     "inquirer": "^9.0.0",
     "@octokit/rest": "^20.0.0",
