@@ -7,7 +7,7 @@ import argparse
 import json
 import logging
 import re
-from datetime import date, datetime
+from datetime import date, datetime, timezone
 from pathlib import Path
 from typing import Optional
 
@@ -44,7 +44,7 @@ def _collect_data(config: dict) -> dict:
     days_left = days_until_sprint_end(sprint_end)
 
     return {
-        "generated_at": datetime.utcnow().isoformat() + "Z",
+        "generated_at": datetime.now(timezone.utc).isoformat(),
         "date": today,
         "sprint_num": sprint_num,
         "sprint_start": sprint_start.isoformat(),
