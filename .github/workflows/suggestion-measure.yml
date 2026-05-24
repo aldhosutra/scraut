@@ -1,0 +1,53 @@
+name: Scraut — Suggestion Measurement
+on:
+  schedule:
+    - cron: '0 3 * * 1'  # Monday morning, after sprint reviews
+  workflow_dispatch:
+
+jobs:
+  measure-suggestions:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - uses: actions/setup-python@v5
+        with: { python-version: '3.11' }
+
+      - run: pip install -r requirements.txt
+
+      - name: Measure implemented suggestions
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+          SLACK_WEBHOOK: ${{ secrets.SLACK_WEBHOOK }}
+        run: |
+          python - << 'EOF'
+          import sys
+          from pathlib import Path
+          sys.path.insert(0, '.')
+          from scripts.utils.config import load_config
+          from scripts.suggestions.measure import measure_suggestion
+          import os
+
+          config = load_config()
+          repo = os.environ.get('GITHUB_REPOSITORY', '')
+          implemented_dir = Path('suggestions/implemented')
+
+          if not implemented_dir.exists():
+              print("No implemented suggestions to measure.")
+          else:
+              files = list(implemented_dir.glob('s*.md'))
+              print(f"Measuring {len(files)} implemented suggestions")
+              for f in files:
+                  measure_suggestion(str(f), repo, config)
+          EOF
+
+      - name: Commit measurement results
+        run: |
+          git config user.email "scraut-bot@noreply.github.com"
+          git config user.name "Scraut Bot"
+          git add suggestions/
+          git diff --staged --quiet || git commit -m "chore: suggestion measurements [skip ci]"
+          git push

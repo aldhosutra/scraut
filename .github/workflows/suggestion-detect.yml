@@ -1,0 +1,50 @@
+name: Scraut — Suggestion Detection
+on:
+  workflow_run:
+    workflows: ["Scraut — Sprint Review"]
+    types: [completed]
+  workflow_dispatch:
+
+jobs:
+  detect-patterns:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - uses: actions/setup-python@v5
+        with: { python-version: '3.11' }
+
+      - run: pip install -r requirements.txt
+
+      - name: Run pattern detectors and generate suggestions
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+          SLACK_WEBHOOK: ${{ secrets.SLACK_WEBHOOK }}
+        run: |
+          python - << 'EOF'
+          import sys
+          sys.path.insert(0, '.')
+          from scripts.utils.config import load_config
+          from scripts.suggestions.detectors import run_all_detectors
+          from scripts.suggestions.generate_suggestion import generate_suggestion
+          import os
+
+          config = load_config()
+          repo = os.environ.get('GITHUB_REPOSITORY', '')
+          evidences = run_all_detectors(repo, config)
+
+          print(f"Detectors triggered: {len(evidences)}")
+          for evidence in evidences:
+              generate_suggestion(evidence, repo, config)
+          EOF
+
+      - name: Commit suggestion files
+        run: |
+          git config user.email "scraut-bot@noreply.github.com"
+          git config user.name "Scraut Bot"
+          git add suggestions/
+          git diff --staged --quiet || git commit -m "chore: new suggestions detected [skip ci]"
+          git push
