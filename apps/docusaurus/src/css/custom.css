@@ -1,0 +1,78 @@
+:root {
+  --ifm-color-primary: #2563eb;
+  --ifm-color-primary-dark: #1d4ed8;
+  --ifm-color-primary-darker: #1e40af;
+  --ifm-color-primary-darkest: #1e3a8a;
+  --ifm-color-primary-light: #3b82f6;
+  --ifm-color-primary-lighter: #60a5fa;
+  --ifm-color-primary-lightest: #93c5fd;
+  --ifm-code-font-size: 90%;
+  --docusaurus-highlighted-code-line-bg: rgba(0, 0, 0, 0.1);
+}
+
+[data-theme='dark'] {
+  --ifm-color-primary: #60a5fa;
+  --ifm-color-primary-dark: #3b82f6;
+  --ifm-color-primary-darker: #2563eb;
+  --ifm-color-primary-darkest: #1d4ed8;
+  --ifm-color-primary-light: #93c5fd;
+  --ifm-color-primary-lighter: #bfdbfe;
+  --ifm-color-primary-lightest: #dbeafe;
+  --docusaurus-highlighted-code-line-bg: rgba(0, 0, 0, 0.3);
+}
+
+/* Scenario callout blocks */
+.scenario-box {
+  border-left: 4px solid var(--ifm-color-primary);
+  background: var(--ifm-code-background);
+  padding: 1rem 1.5rem;
+  margin: 1.5rem 0;
+  border-radius: 0 0.5rem 0.5rem 0;
+}
+
+.scenario-box .scenario-title {
+  font-weight: 700;
+  color: var(--ifm-color-primary);
+  margin-bottom: 0.5rem;
+}
+
+/* File path styling */
+code.file-path {
+  font-size: 0.85em;
+  background: var(--ifm-code-background);
+  padding: 0.1em 0.4em;
+  border-radius: 3px;
+}
+
+/* Workflow trigger badge */
+.trigger-badge {
+  display: inline-block;
+  background: #10b981;
+  color: white;
+  font-size: 0.7em;
+  padding: 2px 8px;
+  border-radius: 12px;
+  margin-left: 0.5rem;
+  font-weight: 600;
+  vertical-align: middle;
+}
+
+/* Output badge */
+.output-badge {
+  display: inline-block;
+  background: #f59e0b;
+  color: white;
+  font-size: 0.7em;
+  padding: 2px 8px;
+  border-radius: 12px;
+  margin-left: 0.5rem;
+  font-weight: 600;
+  vertical-align: middle;
+}
+
+/* Actor annotation */
+.actor-annotation {
+  font-style: italic;
+  color: var(--ifm-color-content-secondary);
+  font-size: 0.9em;
+}

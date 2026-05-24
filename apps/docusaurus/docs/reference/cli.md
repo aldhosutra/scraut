@@ -1,0 +1,200 @@
+---
+sidebar_position: 1
+---
+
+# CLI Reference
+
+The `scraut` CLI provides quick terminal shortcuts for common daily tasks. Install it once, use it every day.
+
+---
+
+## Installation
+
+```bash
+pip install -r apps/automation/requirements.txt
+```
+
+The `scraut` command becomes available after installation.
+
+---
+
+## Commands
+
+### `scraut init`
+
+Interactive first-time setup wizard.
+
+```bash
+scraut init
+```
+
+**What it does:**
+- Asks 9 questions about your team configuration
+- Writes `workspace/scraut.yml`
+- Creates `workspace/` and `.scraut/` directory skeletons
+- Scaffolds template files (standup, retro, meta, capacity, OKR, customer feedback, milestones)
+- Optionally creates GitHub labels (if `GITHUB_TOKEN` is set)
+- Prints the secrets checklist and next steps
+
+**Example session:**
+```
+====================================================
+  Scraut Setup Wizard
+====================================================
+GitHub repository (org/repo): myorg/my-repo
+Team member GitHub logins (comma-separated): alice,bob
+Product owner login [alice]: alice
+Scrum master login [alice]: bob
+Slack channel [#scraut-bot]: #scraut-bot
+Sprint length in days [14]: 14
+Timezone (IANA format, e.g. UTC, Asia/Jakarta) [UTC]: Asia/Jakarta
+LLM provider (anthropic, openai, gemini, ollama) [anthropic]: anthropic
+Slack webhook URL (optional, Enter to skip):
+```
+
+---
+
+### `scraut standup`
+
+Opens today's standup file in GitHub's web editor.
+
+```bash
+scraut standup
+# or, to just print the URL:
+scraut standup --no-browser
+```
+
+**What it does:**
+1. Reads `workspace/scraut.yml` to get current sprint number
+2. Detects your GitHub login from the authenticated token
+3. Constructs the file URL: `github.com/org/repo/edit/main/workspace/sprint/NN/standup/DATE/login.md`
+4. Opens it in your browser (or prints the URL with `--no-browser`)
+
+**Options:**
+```
+--browser / --no-browser   Open in browser (default) or print URL
+```
+
+---
+
+### `scraut status`
+
+Shows current sprint health at a glance.
+
+```bash
+scraut status
+```
+
+**Output includes:**
+- Sprint number and goal (from `workspace/sprint/NN/meta.md`)
+- Story point progress
+- Active milestone health (from `.scraut/milestones/*/health/forecast.md`)
+- Active suggestions (from `.scraut/suggestions/active/`)
+
+**Example output:**
+```
+==================================================
+Sprint 01 Status
+==================================================
+# Sprint 1
+- Period: 2026-05-25 → 2026-06-07
+- Goal: Deliver user authentication and basic dashboard
+- Committed: 34 story points
+
+Milestone: v1.0
+  Status: On track
+  Forecast: 2026-08-24
+
+2 active suggestion(s):
+  • Blockers are going unresolved for > 2 days
+  • PR review cycle averaging 4 days
+
+==================================================
+```
+
+---
+
+### `scraut blocker`
+
+Adds a blocker to today's standup file.
+
+```bash
+scraut blocker "Waiting for API credentials from platform team — blocked on #28"
+```
+
+**What it does:**
+1. Finds today's standup file for your login
+2. Replaces `None` in the `## Blockers` section with your text
+3. Saves the file locally (you still need to commit and push)
+
+**Example:**
+```bash
+scraut blocker "Design mockup for profile page needed before I can continue #31"
+# Output: ✓ Blocker added to alice.md
+#   'Design mockup for profile page needed before I can continue #31'
+#
+# Remember to commit and push: git add . && git commit -m 'standup: blocker [skip ci]' && git push
+```
+
+---
+
+### `scraut velocity`
+
+Shows sprint velocity data.
+
+```bash
+scraut velocity
+# or for a specific sprint:
+scraut velocity --sprint 3
+```
+
+**Options:**
+```
+--sprint INTEGER   Sprint number (default: current sprint)
+```
+
+**Example output:**
+```
+Sprint 03: 28 / 34 sp (82%)
+Rolling average: 30 sp/sprint (σ=4, 3 sprints sampled)
+```
+
+**What it shows:**
+- Completed vs. planned story points for the sprint
+- Completion rate percentage
+- Rolling average velocity (last 5 sprints)
+- Standard deviation (consistency metric)
+- Number of sprints sampled
+
+---
+
+## Global options
+
+```bash
+scraut --version    # Print the installed version
+scraut --help       # Show help for any command
+scraut COMMAND --help  # Show help for a specific command
+```
+
+---
+
+## Running scripts directly
+
+All automation scripts also accept `--help`, `--dry-run`, and `--config` flags:
+
+```bash
+# Preview what standup summary would do without making changes
+python apps/automation/scraut/scrum/standup/generate_summary.py --dry-run
+
+# Use an alternative config file
+python apps/automation/scraut/scrum/sprint/create_sprint.py \
+  --config /path/to/alt-scraut.yml \
+  --sprint 2 \
+  --repo myorg/my-repo
+
+# Preview sprint planning without creating issues
+python apps/automation/scraut/scrum/sprint/plan_sprint.py \
+  --dry-run \
+  --sprint 2 \
+  --repo myorg/my-repo
+```

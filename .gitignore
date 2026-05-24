@@ -91,6 +91,10 @@ pnpm-debug.log*
 .vite/
 coverage/
 
+# Docusaurus
+apps/docusaurus/.docusaurus/
+apps/docusaurus/node_modules/
+
 # Scraut generated portal output
 apps/portal/data.json
 apps/portal/index.html
