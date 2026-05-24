@@ -116,13 +116,6 @@ def get_team_logins() -> list[str]:
     return [m["login"] for m in get_team_members()]
 
 
-def get_display_name(login: str) -> str:
-    for m in get_team_members():
-        if m["login"] == login:
-            return m["display"]
-    return login
-
-
 def get_sprint_folder(sprint_num: Optional[int] = None) -> Path:
     """Return the human-editable sprint input folder."""
     if sprint_num is None:
@@ -135,22 +128,6 @@ def get_sprint_output_folder(sprint_num: Optional[int] = None) -> Path:
     if sprint_num is None:
         sprint_num = get_current_sprint()
     return get_scraut_root() / "sprint" / f"{sprint_num:02d}"
-
-
-def get_sprint_artifact_path(sprint_num: int, *parts: str) -> Path:
-    """Return a path inside workspace/sprint/NN."""
-    return get_sprint_folder(sprint_num).joinpath(*parts)
-
-
-def get_sprint_output_path(sprint_num: int, *parts: str) -> Path:
-    """Return a path inside .scraut/sprint/NN."""
-    return get_sprint_output_folder(sprint_num).joinpath(*parts)
-
-
-def sprint_artifact_ref(sprint_num: int, *parts: str) -> str:
-    """Return a display/ref path for sprint artifacts."""
-    base = f"sprint/{sprint_num:02d}"
-    return "/".join([base, *parts]) if parts else base
 
 
 def get_llm_config() -> dict:

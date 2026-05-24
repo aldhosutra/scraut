@@ -45,7 +45,7 @@ def compute_delta(today: str, config: dict) -> dict:
     for login, data in today_data.get("members", {}).items():
         new_merges.extend(data.get("prs_merged", []))
 
-    # WIP change: count open branches (use commits to distinct branches as proxy)
+    # Track branch churn as a proxy for in-progress work (branches inferred from commit metadata)
     today_branches = set()
     yest_branches = set()
     for data in today_data.get("members", {}).values():
