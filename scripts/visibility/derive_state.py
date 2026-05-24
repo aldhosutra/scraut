@@ -20,6 +20,7 @@ from typing import Optional
 
 from scripts.utils.config import get_current_sprint, get_repo_root
 from scripts.utils.file_utils import read_file, extract_section
+from scripts.github.api import get_github_client
 
 logger = logging.getLogger(__name__)
 
@@ -202,6 +203,96 @@ class StateDeriver:
             )
             for issue in issues
         }
+
+
+class StateResult:
+    """Result of state derivation for a single issue."""
+
+    def __init__(self, column: str, confidence: float, health: str = "on-track"):
+        self.column = column
+        self.confidence = confidence
+        self.health = health
+
+    def __repr__(self):
+        return (f"StateResult(column={self.column!r}, "
+                f"confidence={self.confidence}, health={self.health!r})")
+
+
+def get_pr_issue_map(repo) -> dict:
+    """Return {issue_num: {pr_number, state}} from recent PRs."""
+    result = {}
+    try:
+        for pr in repo.get_pulls(state="all"):
+            text = (pr.title or "") + " " + (pr.body or "")
+            nums = _extract_issue_refs(text)
+            for num in nums:
+                if num not in result or pr.state == "open":
+                    result[num] = {"pr_number": pr.number, "state": pr.state}
+    except Exception as e:
+        logger.warning(f"Could not fetch PRs: {e}")
+    return result
+
+
+def get_sprint_roadmap_issues(repo, sprint_num: int) -> set:
+    """Get set of issue numbers with the sprint label from GitHub."""
+    sprint_label = f"sprint-{sprint_num:02d}"
+    try:
+        issues = repo.get_issues(state="all", labels=[sprint_label])
+        return {i.number for i in issues}
+    except Exception as e:
+        logger.warning(f"Could not fetch sprint issues: {e}")
+        return set()
+
+
+def scan_standup_files(sprint_num: int, target_date: str) -> dict:
+    """Scan standup files. Returns {section: set(issue_nums)}."""
+    standups = _load_today_standups(sprint_num, target_date)
+    return {
+        "Today": _get_issues_in_standups("Today", standups),
+        "Blockers": _get_issues_in_standups("Blockers", standups),
+        "Yesterday": _get_issues_in_standups("Yesterday", standups),
+    }
+
+
+def derive_all_states(repo_name: str, config: dict,
+                      target_date: str = None) -> dict:
+    """Derive states for all issues in the current sprint roadmap."""
+    if target_date is None:
+        target_date = date.today().isoformat()
+
+    sprint_num = get_current_sprint()
+
+    g = get_github_client()
+    repo = g.get_repo(repo_name)
+
+    pr_map = get_pr_issue_map(repo)
+    roadmap_issues = get_sprint_roadmap_issues(repo, sprint_num)
+
+    standups = _load_today_standups(sprint_num, target_date)
+    blocked_issues = _get_issues_in_standups("Blockers", standups)
+    today_issues = _get_issues_in_standups("Today", standups)
+    agent_issues = _get_agent_standup_issues(standups)
+
+    results = {}
+    for issue_num in roadmap_issues:
+        try:
+            issue = repo.get_issue(issue_num)
+            issue_state = issue.state
+        except Exception:
+            issue_state = "open"
+
+        if issue_state == "closed":
+            results[issue_num] = StateResult("Done", 1.0)
+        elif issue_num in pr_map and pr_map[issue_num].get("state") == "open":
+            results[issue_num] = StateResult("Review", 1.0)
+        elif issue_num in blocked_issues:
+            results[issue_num] = StateResult("In Progress", 0.9, "blocked")
+        elif issue_num in agent_issues or issue_num in today_issues:
+            results[issue_num] = StateResult("In Progress", 0.85)
+        else:
+            results[issue_num] = StateResult("Ready", 0.7)
+
+    return results
 
 
 if __name__ == "__main__":

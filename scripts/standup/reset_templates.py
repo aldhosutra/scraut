@@ -6,10 +6,16 @@ Bot commits include [skip ci] to avoid triggering standup workflow.
 """
 import argparse
 import logging
+import re
 from datetime import date
 from pathlib import Path
 from scripts.utils.config import load_config, get_repo_root, get_current_sprint
 from scripts.utils.file_utils import create_if_not_exists
+
+YESTERDAY_PLACEHOLDER = re.compile(
+    r"(## Yesterday\s*\n)(<!-- What did you complete\? Reference issues/PRs where applicable\. -->)\s*(\n|$)",
+    re.IGNORECASE
+)
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
@@ -82,6 +88,9 @@ def reset_templates(config: dict, dry_run: bool = False) -> None:
 
     standup_dir = root / f"sprint-{sprint_num:02d}" / "standup" / today
     standup_dir.mkdir(parents=True, exist_ok=True)
+
+    summary_dir = root / f"sprint-{sprint_num:02d}" / "standup" / "summary"
+    summary_dir.mkdir(parents=True, exist_ok=True)
 
     created = []
     for member in config["team"]["members"]:

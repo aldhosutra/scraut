@@ -1,0 +1,43 @@
+{
+  "date": "2026-05-23",
+  "repos": ["acme/product-api"],
+  "team_filter": ["alice", "bob", "charlie"],
+  "generated_at": "2026-05-23T08:00:00Z",
+  "members": {
+    "alice": {
+      "commits": [
+        {"sha": "abc1234", "message": "Fix JWT expiry", "branch": "feature/auth", "repo": "product-api", "timestamp": "2026-05-23T07:00:00Z"}
+      ],
+      "prs_opened": [],
+      "prs_merged": [
+        {"number": 89, "title": "Refactor auth module", "repo": "product-api", "closes_issues": [42]}
+      ],
+      "prs_reviewed": [{"number": 91, "title": "Rate limiting", "repo": "product-api", "review_type": "approved"}],
+      "ci_failures": []
+    },
+    "bob": {
+      "commits": [
+        {"sha": "def5678", "message": "Add payment gateway", "branch": "feature/payment", "repo": "product-api", "timestamp": "2026-05-23T09:00:00Z"}
+      ],
+      "prs_opened": [],
+      "prs_merged": [],
+      "prs_reviewed": [],
+      "ci_failures": []
+    },
+    "charlie": {
+      "commits": [],
+      "prs_opened": [],
+      "prs_merged": [],
+      "prs_reviewed": [],
+      "ci_failures": []
+    }
+  },
+  "team_summary": {
+    "prs_opened": 0,
+    "prs_merged": 1,
+    "prs_reviewed": 1,
+    "total_commits": 2,
+    "aging_prs": [{"number": 88, "title": "Old PR", "repo": "product-api", "age_days": 5}],
+    "ci_status": "green"
+  }
+}

@@ -12,6 +12,8 @@ from pathlib import Path
 from scripts.utils.config import load_config, get_repo_root
 from scripts.utils.file_utils import read_file, atomic_write
 from scripts.github.api import get_github_client, post_comment
+from scripts.milestone.generate_roadmap import generate_roadmap
+from scripts.sprint.calculate_velocity import calculate_rolling_velocity
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
@@ -103,8 +105,6 @@ def process_comment(issue_number: int, comment_body: str,
         constraints = build_constraints(all_answers, config)
         atomic_write(milestone_dir / "constraints.md", format_constraints(constraints))
 
-        # Import and run roadmap generation
-        from scripts.milestone.generate_roadmap import generate_roadmap
         breakdown_path = milestone_dir / "breakdown.json"
         generate_roadmap(
             breakdown_path=str(breakdown_path),
@@ -118,8 +118,10 @@ def process_comment(issue_number: int, comment_body: str,
 
 def build_constraints(answers: dict[int, str], config: dict) -> dict:
     """Convert raw Q&A answers to a structured constraints dict."""
-    from scripts.sprint.calculate_velocity import calculate_rolling_velocity
-    velocity = calculate_rolling_velocity(config.get("_repo_name", ""))
+    try:
+        velocity = calculate_rolling_velocity(config.get("_repo_name", ""))
+    except Exception:
+        velocity = {"avg": 26, "sprints_sampled": 0, "std_dev": 0}
 
     constraints = {
         "duration": answers.get(1, f"{velocity['avg'] * 4:.0f} days"),

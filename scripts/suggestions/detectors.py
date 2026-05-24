@@ -24,6 +24,7 @@ from typing import Optional
 from scripts.utils.config import load_config, get_repo_root, get_current_sprint
 from scripts.utils.file_utils import read_file, extract_section
 from scripts.github.api import get_github_client, get_sp_from_issue, get_issues
+from scripts.sprint.calculate_velocity import calculate_sprint_velocity, calculate_rolling_velocity
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
@@ -106,12 +107,12 @@ def blocker_frequency_detector(config: dict,
 def _cluster_by_keywords(blockers: list[dict]) -> dict[str, list[dict]]:
     """Simple keyword-based clustering. No LLM — just keyword matching."""
     keyword_groups = {
-        "pr review": ["review", "pr", "pull request", "waiting for review", "needs review"],
+        "pr review": ["review", r"\bpr\b", "pull request", "waiting for review", "needs review"],
         "design approval": ["design", "mockup", "figma", "approval", "ux"],
         "external dependency": ["external", "third party", "vendor", "waiting on", "blocked by team"],
         "environment": ["environment", "staging", "deploy", "infra", "server", "database"],
         "unclear requirements": ["unclear", "requirements", "spec", "need more info", "waiting for clarification"],
-        "testing": ["test", "qa", "bug", "regression", "failing"],
+        "testing": [r"\btest\b", "qa", "bug", "regression", "failing"],
     }
     clusters = {k: [] for k in keyword_groups}
 
@@ -119,7 +120,7 @@ def _cluster_by_keywords(blockers: list[dict]) -> dict[str, list[dict]]:
         text_lower = blocker["text"].lower()
         matched = False
         for theme, keywords in keyword_groups.items():
-            if any(kw in text_lower for kw in keywords):
+            if any(re.search(kw, text_lower) for kw in keywords):
                 clusters[theme].append(blocker)
                 matched = True
                 break
@@ -136,10 +137,8 @@ def velocity_drop_detector(repo_name: str, config: dict,
                             drop_threshold: float = 0.15,
                             min_sprints: int = 2) -> Optional[Evidence]:
     """Detect sustained velocity drop >15% over 2+ consecutive sprints."""
-    from scripts.sprint.calculate_velocity import (calculate_sprint_velocity,
-                                                    calculate_rolling_velocity)
     sprint_num = get_current_sprint()
-    if sprint_num < 3:
+    if sprint_num < 1:
         return None
 
     baseline = calculate_rolling_velocity(repo_name, num_sprints=5)
@@ -148,7 +147,7 @@ def velocity_drop_detector(repo_name: str, config: dict,
         return None
 
     recent_drops = []
-    for s in range(max(1, sprint_num - min_sprints), sprint_num):
+    for s in range(max(1, sprint_num - min_sprints + 1), sprint_num + 1):
         vel = calculate_sprint_velocity(s, repo_name)
         completed = vel.get("completed_sp", 0)
         if completed < avg * (1 - drop_threshold):

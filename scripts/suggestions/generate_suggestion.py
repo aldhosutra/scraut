@@ -107,7 +107,8 @@ def generate_suggestion(evidence: Evidence, repo_name: str,
 
     # Call LLM to draft the suggestion
     evidence_str = "\n".join(
-        f"- Sprint {inst['sprint']} | {inst['date']} | {inst['file']} | {inst['quote']}"
+        f"- Sprint {inst['sprint']} | {inst['date']} | {inst['file']} | "
+        f"{inst.get('quote', inst.get('text', ''))}"
         for inst in evidence.instances
     )
     prompt = SUGGESTION_DRAFT.format(
@@ -136,7 +137,8 @@ def generate_suggestion(evidence: Evidence, repo_name: str,
 
     # Format evidence table
     evidence_table = "\n".join(
-        f"| Sprint {i['sprint']} | {i['date']} | `{i['file'][-40:]}` | {i['quote'][:60]} |"
+        f"| Sprint {i['sprint']} | {i['date']} | `{i['file'][-40:]}` | "
+        f"{i.get('quote', i.get('text', ''))[:60]} |"
         for i in evidence.instances[:6]
     )
 

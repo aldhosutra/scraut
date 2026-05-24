@@ -1,0 +1,70 @@
+sprint:
+  length_days: 14
+  start_day: monday
+  start_time: "09:00"
+  timezone: "Asia/Jakarta"
+  capacity_buffer: 0.85
+  current_sprint: 1
+
+team:
+  members:
+    - login: alice
+      display: Alice
+      role: developer
+      slack_id: U001
+      email: alice@test.com
+    - login: bob
+      display: Bob
+      role: scrum_master
+      slack_id: U002
+      email: bob@test.com
+    - login: charlie
+      display: Charlie
+      role: developer
+      slack_id: U003
+      email: charlie@test.com
+  product_owner: alice
+  scrum_master: bob
+  slack_channel: "#test-scraut"
+
+ceremonies:
+  planning: true
+  standup: true
+  grooming: true
+  review: true
+  retrospective: true
+  estimation: true
+
+definition_of_done:
+  - Tests written for new functionality
+  - PR reviewed by at least one team member
+  - CI passing
+
+repos: []
+
+llm:
+  provider: anthropic
+  model: claude-sonnet-4-6
+  max_tokens: 1000
+  cost_controls:
+    max_daily_tokens: 100000
+    batch_where_possible: false
+
+agents:
+  enabled: false
+
+notifications:
+  slack_webhook: "https://hooks.slack.com/test"
+  morning_dm: false
+  weekly_email: false
+  stakeholder_emails: []
+
+portal:
+  enabled: false
+  title: "Test Dashboard"
+  public: false
+
+suggestions:
+  enabled: true
+  min_evidence_count: 3
+  measurement_sprints: 2
