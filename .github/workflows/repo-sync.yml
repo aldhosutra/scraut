@@ -1,0 +1,72 @@
+name: Scraut — Repo Sync
+on:
+  schedule:
+    - cron: '0 1 * * 1-5'  # 8:00 AM Jakarta (UTC+7) = 01:00 UTC, before standup templates
+  workflow_dispatch:
+    inputs:
+      date:
+        description: 'Date (YYYY-MM-DD, default: today)'
+        required: false
+
+jobs:
+  sync-repos:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - uses: actions/setup-python@v5
+        with: { python-version: '3.11' }
+
+      - run: pip install -r requirements.txt
+
+      - name: Fetch activity from connected repos
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          SCRAUT_GITHUB_TOKEN: ${{ secrets.SCRAUT_GITHUB_TOKEN }}
+        run: |
+          DATE="${{ github.event.inputs.date }}"
+          if [ -z "$DATE" ]; then DATE=$(date +%Y-%m-%d); fi
+          python scripts/repo_sync/fetch_activity.py --date $DATE
+
+      - name: Compute delta vs yesterday
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          DATE="${{ github.event.inputs.date }}"
+          if [ -z "$DATE" ]; then DATE=$(date +%Y-%m-%d); fi
+          python scripts/repo_sync/compute_delta.py --date $DATE
+
+      - name: Pre-fill standup Yesterday sections
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          DATE="${{ github.event.inputs.date }}"
+          if [ -z "$DATE" ]; then DATE=$(date +%Y-%m-%d); fi
+          python scripts/repo_sync/prefill_standups.py --date $DATE
+
+      - name: Commit activity files
+        run: |
+          git config user.email "scraut-bot@noreply.github.com"
+          git config user.name "Scraut Bot"
+          git add sprint-*/code/ sprint-*/standup/
+          git diff --staged --quiet || git commit -m "chore: repo sync $(date +%Y-%m-%d) [skip ci]"
+          git push
+
+  notify-aging-prs:
+    needs: sync-repos
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with: { python-version: '3.11' }
+
+      - run: pip install -r requirements.txt
+
+      - name: Post aging PR alerts to Slack
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          SLACK_WEBHOOK: ${{ secrets.SLACK_WEBHOOK }}
+        run: python scripts/repo_sync/notify_aging_prs.py

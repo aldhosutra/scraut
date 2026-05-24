@@ -1,0 +1,38 @@
+name: Scraut — Milestone Planning Response
+on:
+  issue_comment:
+    types: [created]
+
+jobs:
+  process-answer:
+    # Only process comments on planning session issues
+    if: contains(github.event.comment.body, '/answer')
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - uses: actions/setup-python@v5
+        with: { python-version: '3.11' }
+
+      - run: pip install -r requirements.txt
+
+      - name: Process planning answer
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+          SLACK_WEBHOOK: ${{ secrets.SLACK_WEBHOOK }}
+        run: |
+          python scripts/milestone/planning_session.py \
+            --issue ${{ github.event.issue.number }} \
+            --comment-body "${{ github.event.comment.body }}" \
+            --repo ${{ github.repository }}
+
+      - name: Commit updated planning session
+        run: |
+          git config user.email "scraut-bot@noreply.github.com"
+          git config user.name "Scraut Bot"
+          git add milestones/
+          git diff --staged --quiet || git commit -m "chore: planning session update [skip ci]"
+          git push
