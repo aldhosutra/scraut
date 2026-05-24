@@ -22,7 +22,7 @@ jobs:
         run: |
           ENABLED=$(python -c "
           import yaml
-          cfg = yaml.safe_load(open('scraut.yml'))
+          cfg = yaml.safe_load(open('workspace/scraut.yml'))
           print(str(cfg.get('agents', {}).get('enabled', False)).lower())
           ")
           echo "agents_enabled=$ENABLED" >> $GITHUB_OUTPUT
