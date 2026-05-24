@@ -52,9 +52,22 @@ _Submitted via Scraut web form_
   // Encode for GitHub API
   const encoded = Buffer.from(content).toString('base64');
 
-  // Determine current sprint from scraut.yml (simplified: use date math)
-  // In production, fetch scraut.yml from repo and parse current_sprint
-  const sprintNum = '01'; // TODO: fetch from scraut.yml
+  // Fetch current sprint number from workspace/scraut.yml in the repo
+  let sprintNum = '01';
+  try {
+    const configResp = await fetch(
+      `https://api.github.com/repos/${process.env.SCRAUT_REPO}/contents/workspace/scraut.yml`,
+      { headers: { Authorization: `token ${process.env.GITHUB_TOKEN}`, Accept: 'application/vnd.github.v3+json' } }
+    );
+    if (configResp.ok) {
+      const { content: b64 } = await configResp.json();
+      const yaml = Buffer.from(b64, 'base64').toString('utf8');
+      const match = yaml.match(/current_sprint\s*:\s*(\d+)/);
+      if (match) sprintNum = String(parseInt(match[1], 10)).padStart(2, '0');
+    }
+  } catch {
+    // fall back to sprint 01 if config fetch fails
+  }
 
   const filePath = `workspace/sprint/${sprintNum}/standup/${date}/${login}.md`;
   const apiUrl = `https://api.github.com/repos/${process.env.SCRAUT_REPO}/contents/${filePath}`;
