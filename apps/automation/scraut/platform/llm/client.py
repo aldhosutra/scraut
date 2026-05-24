@@ -1,6 +1,7 @@
 """
-lib/llm/client.py
+platform/llm/client.py
 Swappable LLM provider. Reads provider from scraut.yml.
+Supports: anthropic, openai, gemini, ollama.
 All calls include token tracking and cost controls.
 """
 import os
@@ -17,11 +18,7 @@ _daily_tokens_used = 0
 
 def complete(prompt: str, system: Optional[str] = None,
              max_tokens: Optional[int] = None) -> str:
-    """
-    Call the configured LLM provider with a prompt.
-    Returns the text response.
-    Falls back to empty string on failure.
-    """
+    """Call the configured LLM provider. Returns text; falls back to '' on failure."""
     global _daily_tokens_used
     config = get_llm_config()
     provider = config.get("provider", "anthropic")
@@ -37,6 +34,8 @@ def complete(prompt: str, system: Optional[str] = None,
             return _call_anthropic(prompt, system, max_tok)
         elif provider == "openai":
             return _call_openai(prompt, system, max_tok)
+        elif provider == "gemini":
+            return _call_gemini(prompt, system, max_tok)
         elif provider == "ollama":
             return _call_ollama(prompt, system, max_tok)
         else:
@@ -48,18 +47,23 @@ def complete(prompt: str, system: Optional[str] = None,
 
 def _call_anthropic(prompt: str, system: Optional[str], max_tokens: int) -> str:
     import anthropic
-    client = anthropic.Anthropic(api_key=os.environ["ANTHROPIC_API_KEY"])
     config = get_llm_config()
+    client_kwargs: dict = {"api_key": os.environ["ANTHROPIC_API_KEY"]}
+    base_url = config.get("base_url", "")
+    if base_url:
+        client_kwargs["base_url"] = base_url
+
+    client = anthropic.Anthropic(**client_kwargs)
     messages = [{"role": "user", "content": prompt}]
-    kwargs = {
+    call_kwargs: dict = {
         "model": config.get("model", "claude-sonnet-4-6"),
         "max_tokens": max_tokens,
         "messages": messages,
     }
     if system:
-        kwargs["system"] = system
+        call_kwargs["system"] = system
 
-    response = client.messages.create(**kwargs)
+    response = client.messages.create(**call_kwargs)
     global _daily_tokens_used
     _daily_tokens_used += response.usage.input_tokens + response.usage.output_tokens
     return response.content[0].text
@@ -67,8 +71,14 @@ def _call_anthropic(prompt: str, system: Optional[str], max_tokens: int) -> str:
 
 def _call_openai(prompt: str, system: Optional[str], max_tokens: int) -> str:
     from openai import OpenAI
-    client = OpenAI(api_key=os.environ["OPENAI_API_KEY"])
     config = get_llm_config()
+    # Use "no-key" when key is absent — allows unauthenticated local endpoints.
+    client_kwargs: dict = {"api_key": os.environ.get("OPENAI_API_KEY", "no-key")}
+    base_url = config.get("base_url", "")
+    if base_url:
+        client_kwargs["base_url"] = base_url
+
+    client = OpenAI(**client_kwargs)
     messages = []
     if system:
         messages.append({"role": "system", "content": system})
@@ -80,6 +90,30 @@ def _call_openai(prompt: str, system: Optional[str], max_tokens: int) -> str:
         messages=messages,
     )
     return response.choices[0].message.content
+
+
+def _call_gemini(prompt: str, system: Optional[str], max_tokens: int) -> str:
+    import google.generativeai as genai
+    config = get_llm_config()
+    genai.configure(api_key=os.environ.get("GOOGLE_API_KEY", ""))
+
+    model_name = config.get("model", "gemini-1.5-pro")
+    generation_config = genai.types.GenerationConfig(max_output_tokens=max_tokens)
+    model = genai.GenerativeModel(
+        model_name,
+        system_instruction=system if system else None,
+        generation_config=generation_config,
+    )
+
+    response = model.generate_content(prompt)
+    global _daily_tokens_used
+    meta = getattr(response, "usage_metadata", None)
+    if meta:
+        _daily_tokens_used += (
+            getattr(meta, "prompt_token_count", 0) +
+            getattr(meta, "candidates_token_count", 0)
+        )
+    return response.text
 
 
 def _call_ollama(prompt: str, system: Optional[str], max_tokens: int) -> str:

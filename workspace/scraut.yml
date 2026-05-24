@@ -42,8 +42,12 @@ repos:                              # Connected GitHub repos for code activity s
     enabled: false
 
 llm:
-  provider: anthropic               # anthropic | openai | ollama
+  provider: anthropic               # anthropic | openai | gemini | ollama
   model: claude-sonnet-4-6          # Model name (provider-specific)
+  base_url: ""                      # Optional: override API base URL
+                                    #   anthropic: Anthropic-compatible proxy
+                                    #   openai: Groq / DeepSeek / LM Studio / any OpenAI-compat
+                                    #   (leave empty to use the provider's default endpoint)
   max_tokens: 1000                  # Per-call token limit
   cost_controls:
     max_daily_tokens: 100000        # Fail-safe daily limit

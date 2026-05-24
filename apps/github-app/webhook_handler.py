@@ -69,8 +69,9 @@ definition_of_done:
 repos: []
 
 llm:
-  provider: anthropic
-  model: claude-sonnet-4-6
+  provider: anthropic               # anthropic | openai | gemini | ollama
+  model: claude-sonnet-4-6          # Model name for the chosen provider
+  base_url: ""                      # Optional: override API base URL (empty = default)
   max_tokens: 1000
   cost_controls:
     max_daily_tokens: 100000
