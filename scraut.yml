@@ -1,0 +1,92 @@
+# scraut.yml — Scraut Global Configuration
+# All fields documented. Minimal required: sprint, team.members, llm.provider
+
+sprint:
+  length_days: 14                   # Sprint duration in calendar days
+  start_day: monday                 # Day of week sprints start
+  start_time: "09:00"               # Local time for ceremony triggers
+  timezone: "Asia/Jakarta"          # IANA timezone (affects cron schedules)
+  capacity_buffer: 0.85             # Plan to 85% of historical velocity (safety)
+  current_sprint: 1                 # Auto-incremented by close_sprint.py
+
+team:
+  members:
+    - login: your-github-login      # GitHub username (exact match)
+      display: Your Name            # Human-readable name
+      role: developer               # developer | product_owner | scrum_master
+      slack_id: UXXXXXXXXX          # Slack member ID (for DMs)
+      email: you@example.com        # For email digest
+  product_owner: your-github-login  # Login of PO (gets backlog approval step)
+  scrum_master: your-github-login   # Login of SM (gets suggestion system alerts)
+  slack_channel: "#scraut-bot"      # Main channel for ceremony posts
+
+ceremonies:
+  planning: true
+  standup: true
+  grooming: true
+  review: true
+  retrospective: true
+  estimation: true                  # Emoji reaction-based story point voting
+
+definition_of_done:
+  - Tests written for new functionality
+  - PR reviewed by at least one team member
+  - Acceptance criteria mentioned in PR description
+  - No open review comments
+  - CI passing
+
+repos:                              # Connected GitHub repos for code activity sync
+  - name: placeholder-repo          # Display name
+    url: your-org/your-repo         # org/repo format
+    branch_filter: [main]           # Only watch these branches
+    enabled: false
+
+llm:
+  provider: anthropic               # anthropic | openai | ollama
+  model: claude-sonnet-4-6          # Model name (provider-specific)
+  max_tokens: 1000                  # Per-call token limit
+  cost_controls:
+    max_daily_tokens: 100000        # Fail-safe daily limit
+    batch_where_possible: true      # Batch multiple issues in one call
+
+agents:
+  enabled: false                    # Enable AI agent coordination mode
+  roles:
+    - id: orchestrator
+      type: orchestrator
+      enabled: false
+    - id: agent-backend
+      type: specialist
+      specialty: backend
+      enabled: false
+    - id: agent-frontend
+      type: specialist
+      specialty: frontend
+      enabled: false
+    - id: agent-test
+      type: specialist
+      specialty: testing
+      enabled: false
+  human_checkpoints:
+    - event: sprint_boundary        # Pause before each new sprint
+    - event: milestone_eta_slip     # ETA drifts > 1 sprint from target
+    - event: escalation_count       # >2 unresolved agent escalations
+    - event: agent_failure          # Any agent errors repeatedly
+  autonomy_level: supervised        # supervised | semi-auto | full-auto
+
+notifications:
+  slack_webhook: ""                 # Set via SLACK_WEBHOOK secret
+  morning_dm: true                  # Daily standup link DM at 7:55am
+  weekly_email: false               # Weekly email digest
+  stakeholder_emails: []            # Email list for weekly digest
+
+portal:
+  enabled: true
+  title: "Team Dashboard"
+  public: true                      # false = private GitHub Pages
+  refresh_minutes: 30               # How often board syncs from artifacts
+
+suggestions:
+  enabled: true
+  min_evidence_count: 3             # Min pattern occurrences before suggesting
+  measurement_sprints: 2            # Sprints after implementation to measure
