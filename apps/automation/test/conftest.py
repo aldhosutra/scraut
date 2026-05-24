@@ -40,7 +40,7 @@ def config(scraut_repo) -> dict:
 def patch_repo_root(scraut_repo, monkeypatch):
     """Make get_repo_root() return the temp test directory for ALL tests."""
     monkeypatch.setattr(
-        "scraut.platform.utils.config._config_path",
+        "scraut.platform.utils.config._repo_root",
         scraut_repo,
     )
     monkeypatch.setattr(

@@ -17,12 +17,12 @@ jobs:
 
       - name: Install dependencies
         run: |
-          pip install -r requirements.txt
-          pip install -r requirements-test.txt
+          pip install -r apps/automation/requirements.txt
+          pip install -r apps/automation/requirements-test.txt
 
       - name: Run unit tests
         run: |
-          pytest test/unit/ -m unit -v \
+          pytest apps/automation/test/unit/ -m unit -v \
             --cov=scraut.scrum \
             --cov=scraut.platform \
             --cov-report=xml \
@@ -46,12 +46,12 @@ jobs:
 
       - name: Install dependencies
         run: |
-          pip install -r requirements.txt
-          pip install -r requirements-test.txt
+          pip install -r apps/automation/requirements.txt
+          pip install -r apps/automation/requirements-test.txt
 
       - name: Run integration tests
         run: |
-          pytest test/integration/ -m integration -v \
+          pytest apps/automation/test/integration/ -m integration -v \
             --tb=short
 
   lint:

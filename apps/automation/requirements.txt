@@ -33,4 +33,4 @@ responses>=0.25.0
 
 # Install this package so 'from scraut.scrum.X import Y' and
 # 'from scraut.platform.X import Y' work when modules run directly.
--e .
+-e apps/automation

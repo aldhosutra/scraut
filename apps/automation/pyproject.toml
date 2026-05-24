@@ -1,0 +1,43 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "scraut"
+version = "0.1.0"
+requires-python = ">=3.11"
+
+[project.scripts]
+scraut = "scraut.cli.cli:main"
+
+[tool.setuptools.packages.find]
+where = ["."]
+include = ["scraut*"]
+
+[tool.pytest.ini_options]
+testpaths = ["test"]
+pythonpath = ["."]
+python_files = ["test_*.py"]
+python_classes = ["Test*"]
+python_functions = ["test_*"]
+addopts = [
+    "--tb=short",
+    "--strict-markers",
+    "-v",
+    "--cov=scraut.platform.utils",
+    "--cov=scraut.scrum.sprint.calculate_velocity",
+    "--cov=scraut.scrum.standup.reset_templates",
+    "--cov=scraut.scrum.milestone.planning_session",
+    "--cov=scraut.scrum.milestone.health_check",
+    "--cov=scraut.scrum.visibility.derive_state",
+    "--cov=scraut.scrum.suggestions.detectors",
+    "--cov=scraut.scrum.backlog.tally_estimation",
+    "--cov=scraut.scrum.backlog.triage_issue",
+    "--cov=scraut.scrum.repo_sync.prefill_standups",
+    "--cov-report=term-missing",
+]
+markers = [
+    "unit: Unit tests (no external I/O)",
+    "integration: Integration tests (uses temp files)",
+    "slow: Tests that take >2 seconds",
+]

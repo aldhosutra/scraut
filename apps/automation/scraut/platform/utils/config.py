@@ -11,31 +11,53 @@ import logging
 logger = logging.getLogger(__name__)
 
 _config: Optional[dict] = None
-_config_path: Optional[Path] = None
+_repo_root: Optional[Path] = None
+
+
+def _resolve_repo_root(config_file: Path) -> Path:
+    """Return the repo root given the resolved path to scraut.yml.
+
+    When scraut.yml lives inside workspace/ the repo root is one level up;
+    otherwise the repo root is the directory that contains scraut.yml.
+    """
+    if config_file.parent.name == "workspace":
+        return config_file.parent.parent
+    return config_file.parent
+
+
+def _find_config() -> tuple[Path, Path]:
+    """Search upward from CWD for scraut.yml.
+
+    Checks workspace/scraut.yml before scraut.yml at each level so that
+    repos which store the config inside workspace/ are found correctly.
+    Returns (config_path, repo_root).
+    """
+    cwd = Path.cwd()
+    for parent in [cwd] + list(cwd.parents):
+        ws_candidate = parent / "workspace" / "scraut.yml"
+        if ws_candidate.exists():
+            return ws_candidate, parent
+        candidate = parent / "scraut.yml"
+        if candidate.exists():
+            return candidate, parent
+    raise FileNotFoundError("scraut.yml not found in directory tree")
 
 
 def load_config(config_path: Optional[str] = None) -> dict:
-    """Load scraut.yml from repo root or specified path."""
-    global _config, _config_path
+    """Load scraut.yml from repo root (or workspace/) or a specified path."""
+    global _config, _repo_root
 
     if config_path:
-        path = Path(config_path)
+        path = Path(config_path).resolve()
+        root = _resolve_repo_root(path)
     else:
-        # Search upward from cwd for scraut.yml
-        cwd = Path.cwd()
-        for parent in [cwd] + list(cwd.parents):
-            candidate = parent / "scraut.yml"
-            if candidate.exists():
-                path = candidate
-                break
-        else:
-            raise FileNotFoundError("scraut.yml not found in directory tree")
+        path, root = _find_config()
 
     with open(path) as f:
         config = yaml.safe_load(f)
 
     _config = config
-    _config_path = path.parent
+    _repo_root = root
     logger.info(f"Loaded config from {path}")
     return config
 
@@ -48,10 +70,10 @@ def get_config() -> dict:
 
 
 def get_repo_root() -> Path:
-    """Return the repository root directory (where scraut.yml lives)."""
-    if _config_path is None:
+    """Return the repository root directory (parent of workspace/, or where scraut.yml lives)."""
+    if _repo_root is None:
         load_config()
-    return _config_path
+    return _repo_root
 
 
 def get_workspace_root() -> Path:
