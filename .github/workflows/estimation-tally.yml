@@ -1,0 +1,25 @@
+name: Scraut — Estimation Tally
+on:
+  issue_comment:
+    types: [created, edited, deleted]
+
+jobs:
+  tally-votes:
+    if: contains(github.event.comment.body, '<!-- scraut-estimation -->')
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with: { python-version: '3.11' }
+
+      - run: pip install -r requirements.txt
+
+      - name: Tally estimation votes
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          python scripts/backlog/tally_estimation.py \
+            --issue ${{ github.event.issue.number }} \
+            --comment ${{ github.event.comment.id }} \
+            --repo ${{ github.repository }}

@@ -1,0 +1,29 @@
+name: Scraut — Daily Template Reset
+on:
+  schedule:
+    - cron: '55 1 * * 1-5'  # 1:55 AM UTC weekdays (adjust for timezone)
+  workflow_dispatch:
+
+jobs:
+  reset-templates:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - uses: actions/setup-python@v5
+        with: { python-version: '3.11' }
+
+      - run: pip install -r requirements.txt
+
+      - name: Reset standup templates
+        run: python scripts/standup/reset_templates.py
+
+      - name: Commit new templates
+        run: |
+          git config user.email "scraut-bot@noreply.github.com"
+          git config user.name "Scraut Bot"
+          git add sprint-*/standup/
+          git diff --staged --quiet || git commit -m "chore: standup templates $(date +%Y-%m-%d) [skip ci]"
+          git push

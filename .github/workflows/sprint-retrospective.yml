@@ -1,0 +1,38 @@
+name: Scraut — Sprint Retrospective
+on:
+  workflow_dispatch:
+    inputs:
+      sprint_num:
+        description: 'Sprint number'
+        required: true
+
+jobs:
+  retrospective:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - uses: actions/setup-python@v5
+        with: { python-version: '3.11' }
+
+      - run: pip install -r requirements.txt
+
+      - name: Synthesise retrospective
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+          SLACK_WEBHOOK: ${{ secrets.SLACK_WEBHOOK }}
+        run: |
+          python scripts/sprint/synthesise_retrospective.py \
+            --sprint ${{ github.event.inputs.sprint_num }} \
+            --repo ${{ github.repository }}
+
+      - name: Commit retro summary
+        run: |
+          git config user.email "scraut-bot@noreply.github.com"
+          git config user.name "Scraut Bot"
+          git add sprint-*/retrospective/summary.md
+          git diff --staged --quiet || git commit -m "chore: sprint retrospective summary [skip ci]"
+          git push

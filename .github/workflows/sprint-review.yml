@@ -1,0 +1,48 @@
+name: Scraut — Sprint Review
+on:
+  workflow_dispatch:
+    inputs:
+      sprint_num:
+        description: 'Sprint number to review'
+        required: true
+      repo:
+        description: 'org/repo'
+        required: true
+
+jobs:
+  sprint-review:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - uses: actions/setup-python@v5
+        with: { python-version: '3.11' }
+
+      - run: pip install -r requirements.txt
+
+      - name: Generate sprint review
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+          SLACK_WEBHOOK: ${{ secrets.SLACK_WEBHOOK }}
+        run: |
+          python scripts/sprint/close_sprint.py \
+            --sprint ${{ github.event.inputs.sprint_num }} \
+            --repo ${{ github.event.inputs.repo }}
+          python scripts/reports/burndown_chart.py \
+            --sprint ${{ github.event.inputs.sprint_num }} \
+            --repo ${{ github.event.inputs.repo }}
+          python scripts/sprint/generate_review.py \
+            --sprint ${{ github.event.inputs.sprint_num }} \
+            --repo ${{ github.event.inputs.repo }}
+
+      - name: Commit review artifacts
+        run: |
+          git config user.email "scraut-bot@noreply.github.com"
+          git config user.name "Scraut Bot"
+          git add sprint-*/review/ sprint-*/standup/summary/
+          SPRINT="${{ github.event.inputs.sprint_num }}"
+          git diff --staged --quiet || git commit -m "chore: sprint ${SPRINT} review [skip ci]"
+          git push
