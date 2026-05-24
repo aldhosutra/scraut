@@ -1,0 +1,97 @@
+name: Scraut — Agent Orchestrator
+on:
+  schedule:
+    - cron: '0 */4 * * 1-5'  # Every 4 hours on weekdays
+  workflow_dispatch:
+
+jobs:
+  orchestrate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - uses: actions/setup-python@v5
+        with: { python-version: '3.11' }
+
+      - run: pip install -r requirements.txt
+
+      - name: Check if agent mode is enabled
+        id: check_agents
+        run: |
+          ENABLED=$(python -c "
+          import yaml
+          cfg = yaml.safe_load(open('scraut.yml'))
+          print(str(cfg.get('agents', {}).get('enabled', False)).lower())
+          ")
+          echo "agents_enabled=$ENABLED" >> $GITHUB_OUTPUT
+
+      - name: Run orchestrator cycle
+        if: steps.check_agents.outputs.agents_enabled == 'true'
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+          SLACK_WEBHOOK: ${{ secrets.SLACK_WEBHOOK }}
+          SLACK_BOT_TOKEN: ${{ secrets.SLACK_BOT_TOKEN }}
+        run: |
+          python - << 'EOF'
+          import sys
+          import os
+          sys.path.insert(0, '.')
+          from scripts.utils.config import load_config
+          from scripts.agents.orchestrator import run_orchestrator_cycle
+          from scripts.agents.deadlock_detect import detect_all_deadlocks
+
+          config = load_config()
+          repo = os.environ.get('GITHUB_REPOSITORY', '')
+
+          deadlocks = detect_all_deadlocks(repo, config)
+          if deadlocks["has_issues"]:
+              print(f"⚠️ Deadlocks detected: {deadlocks}")
+
+          run_orchestrator_cycle(repo, config)
+          EOF
+
+      - name: Commit orchestrator standup
+        if: steps.check_agents.outputs.agents_enabled == 'true'
+        run: |
+          git config user.email "scraut-bot@noreply.github.com"
+          git config user.name "Scraut Bot"
+          git add sprint-*/standup/
+          git diff --staged --quiet || git commit -m "chore: orchestrator cycle [skip ci]"
+          git push
+
+  process-checkpoint:
+    runs-on: ubuntu-latest
+    if: |
+      github.event_name == 'issue_comment' &&
+      (contains(github.event.comment.body, '/resume') ||
+       contains(github.event.comment.body, '/pause'))
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with: { python-version: '3.11' }
+
+      - run: pip install -r requirements.txt
+
+      - name: Process checkpoint command
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          SLACK_WEBHOOK: ${{ secrets.SLACK_WEBHOOK }}
+          ISSUE_NUMBER: ${{ github.event.issue.number }}
+          COMMENT_BODY: ${{ github.event.comment.body }}
+        run: |
+          python - << 'EOF'
+          import sys, os
+          sys.path.insert(0, '.')
+          from scripts.utils.config import load_config
+          from scripts.agents.checkpoint import process_checkpoint_response
+
+          config = load_config()
+          repo = os.environ.get('GITHUB_REPOSITORY', '')
+          issue_num = int(os.environ.get('ISSUE_NUMBER', '0'))
+          comment = os.environ.get('COMMENT_BODY', '')
+          process_checkpoint_response(issue_num, comment, repo)
+          EOF

@@ -1,0 +1,24 @@
+name: Scraut
+description: >
+  Scrum Automation — fully automated Scrum ceremonies, milestone planning,
+  suggestion system, and AI agent coordination. All powered by text files.
+url: https://github.com/marketplace/scraut
+hook_attributes:
+  url: https://scraut.example.com/webhooks/github
+  active: true
+redirect_url: https://scraut.example.com/install/callback
+default_events:
+  - push
+  - issues
+  - issue_comment
+  - pull_request
+  - pull_request_review
+  - workflow_run
+default_permissions:
+  contents: write
+  issues: write
+  pull_requests: write
+  actions: write
+  metadata: read
+  projects: write
+  members: read

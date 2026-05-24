@@ -50,29 +50,52 @@ llm:
     batch_where_possible: true      # Batch multiple issues in one call
 
 agents:
-  enabled: false                    # Enable AI agent coordination mode
+  enabled: false                    # Set to true to activate agent mode
+
   roles:
-    - id: orchestrator
+    - id: agent-orchestrator
       type: orchestrator
       enabled: false
+      description: "Plans sprints, assigns tasks to specialist agents"
+
     - id: agent-backend
       type: specialist
       specialty: backend
       enabled: false
+      github_workflow: .github/workflows/agent-backend.yml
+      description: "Implements backend/API tasks"
+
     - id: agent-frontend
       type: specialist
       specialty: frontend
       enabled: false
+      github_workflow: .github/workflows/agent-frontend.yml
+      description: "Implements UI/frontend tasks"
+
     - id: agent-test
       type: specialist
       specialty: testing
       enabled: false
+      github_workflow: .github/workflows/agent-test.yml
+      description: "Reviews PRs, writes tests, validates DoD"
+
+    - id: agent-review
+      type: specialist
+      specialty: review
+      enabled: false
+      github_workflow: .github/workflows/agent-review.yml
+      description: "Reviews PRs, leaves structured feedback"
+
   human_checkpoints:
-    - event: sprint_boundary        # Pause before each new sprint
-    - event: milestone_eta_slip     # ETA drifts > 1 sprint from target
-    - event: escalation_count       # >2 unresolved agent escalations
-    - event: agent_failure          # Any agent errors repeatedly
+    - event: sprint_boundary        # Pause before every new sprint (requires human approval to start)
+    - event: milestone_eta_slip     # Pause if ETA drifts > 1 sprint from target
+    - event: escalation_count       # Pause if ≥2 agents are simultaneously blocked
+    - event: agent_failure          # Pause if any agent workflow fails repeatedly (>3 times/day)
+
   autonomy_level: supervised        # supervised | semi-auto | full-auto
+  # supervised: human approves sprint plan before agents execute
+  # semi-auto: agents run freely, checkpoint at sprint boundaries
+  # full-auto: agents run continuously, humans receive reports only
 
 notifications:
   slack_webhook: ""                 # Set via SLACK_WEBHOOK secret

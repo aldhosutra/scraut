@@ -1,0 +1,129 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Daily Standup</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: -apple-system, sans-serif; background: #f5f5f7;
+         display: flex; justify-content: center; padding: 40px 16px; }
+  .card { background: white; border-radius: 16px; padding: 32px;
+          max-width: 560px; width: 100%; box-shadow: 0 2px 12px rgba(0,0,0,.08); }
+  h1 { font-size: 20px; margin-bottom: 4px; }
+  .subtitle { font-size: 13px; color: #86868b; margin-bottom: 24px; }
+  label { display: block; font-size: 13px; font-weight: 600;
+          color: #3a3a3c; margin-bottom: 6px; }
+  select, textarea { width: 100%; border: 1.5px solid #d1d1d6; border-radius: 10px;
+                      padding: 10px 14px; font-size: 14px; color: #1d1d1f;
+                      background: white; margin-bottom: 18px; font-family: inherit; }
+  textarea { resize: vertical; min-height: 80px; }
+  textarea:focus, select:focus { outline: none; border-color: #0071e3; }
+  button { width: 100%; background: #0071e3; color: white; border: none;
+           border-radius: 10px; padding: 14px; font-size: 15px; font-weight: 600;
+           cursor: pointer; }
+  button:hover { background: #0077ed; }
+  button:disabled { background: #aeaeb2; cursor: not-allowed; }
+  .success { background: #d1fae5; border-radius: 10px; padding: 16px;
+             text-align: center; color: #065f46; font-size: 14px; display: none; }
+  .error { background: #fee2e2; border-radius: 10px; padding: 12px;
+           color: #991b1b; font-size: 13px; margin-bottom: 16px; display: none; }
+  .hint { font-size: 12px; color: #86868b; margin-top: -14px; margin-bottom: 18px; }
+</style>
+</head>
+<body>
+<div class="card">
+  <h1>Daily Standup</h1>
+  <p class="subtitle" id="date-subtitle">Loading...</p>
+
+  <div id="error-msg" class="error"></div>
+
+  <label for="name">Your name</label>
+  <select id="name"></select>
+
+  <label for="yesterday">What did you accomplish?</label>
+  <textarea id="yesterday" placeholder="e.g. Finished the onboarding flow design&#10;Had a meeting with the client&#10;Reviewed the test results"></textarea>
+  <p class="hint">Yesterday's work and completed tasks</p>
+
+  <label for="today">What are you working on today?</label>
+  <textarea id="today" placeholder="e.g. Starting the payment integration&#10;Design review at 2pm"></textarea>
+
+  <label for="blockers">Any blockers?</label>
+  <textarea id="blockers" placeholder="Write None if nothing is blocking you" style="min-height:60px"></textarea>
+
+  <button id="submit-btn" onclick="submitStandup()">Submit Standup</button>
+
+  <div id="success-msg" class="success">
+    ✅ Standup submitted! Thank you.<br>
+    <span style="font-size:12px;margin-top:4px;display:block;">The team bot will include your update in today's summary.</span>
+  </div>
+</div>
+
+<script>
+// Configuration — set these values when deploying
+const CONFIG = {
+  teamMembers: [],    // Populated from scraut.yml via build step
+  apiEndpoint: '/api/standup',  // Your edge function URL
+};
+
+window.onload = () => {
+  const today = new Date().toLocaleDateString('en-US',
+    { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
+  document.getElementById('date-subtitle').textContent = today;
+
+  // Populate team members dropdown
+  const select = document.getElementById('name');
+  CONFIG.teamMembers.forEach(m => {
+    const opt = document.createElement('option');
+    opt.value = m.login;
+    opt.textContent = m.display;
+    select.appendChild(opt);
+  });
+};
+
+async function submitStandup() {
+  const btn = document.getElementById('submit-btn');
+  const errorEl = document.getElementById('error-msg');
+  const successEl = document.getElementById('success-msg');
+  errorEl.style.display = 'none';
+
+  const data = {
+    login: document.getElementById('name').value,
+    yesterday: document.getElementById('yesterday').value.trim(),
+    today: document.getElementById('today').value.trim(),
+    blockers: document.getElementById('blockers').value.trim() || 'None',
+    date: new Date().toISOString().split('T')[0],
+  };
+
+  if (!data.yesterday || !data.today) {
+    errorEl.textContent = 'Please fill in both Yesterday and Today fields.';
+    errorEl.style.display = 'block';
+    return;
+  }
+
+  btn.disabled = true;
+  btn.textContent = 'Submitting...';
+
+  try {
+    const resp = await fetch(CONFIG.apiEndpoint, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(data),
+    });
+
+    if (!resp.ok) {
+      throw new Error(await resp.text());
+    }
+
+    btn.style.display = 'none';
+    successEl.style.display = 'block';
+  } catch (err) {
+    errorEl.textContent = `Submission failed: ${err.message}. Please try again or use the GitHub pencil icon.`;
+    errorEl.style.display = 'block';
+    btn.disabled = false;
+    btn.textContent = 'Submit Standup';
+  }
+}
+</script>
+</body>
+</html>

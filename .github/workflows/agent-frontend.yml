@@ -1,0 +1,126 @@
+name: Scraut — Frontend Agent
+on:
+  schedule:
+    - cron: '30 */4 * * 1-5'  # 30 min after orchestrator
+  workflow_dispatch:
+    inputs:
+      task_issue:
+        description: 'Issue number to work on (optional)'
+        required: false
+
+jobs:
+  work:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - uses: actions/setup-python@v5
+        with: { python-version: '3.11' }
+
+      - run: pip install -r requirements.txt
+
+      - name: Check if agent mode enabled
+        id: check
+        run: |
+          ENABLED=$(python -c "
+          import yaml
+          cfg = yaml.safe_load(open('scraut.yml'))
+          agents = cfg.get('agents', {})
+          enabled = agents.get('enabled', False)
+          roles = {r['id']: r.get('enabled', False) for r in agents.get('roles', [])}
+          print(str(enabled and roles.get('agent-frontend', False)).lower())
+          ")
+          echo "enabled=$ENABLED" >> $GITHUB_OUTPUT
+
+      - name: Discover and claim task
+        if: steps.check.outputs.enabled == 'true'
+        id: claim
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          python - << 'EOF'
+          import sys, os
+          sys.path.insert(0, '.')
+          from scripts.utils.config import load_config
+          from scripts.github.api import get_github_client, get_issues
+          from scripts.utils.config import get_current_sprint
+
+          config = load_config()
+          repo_name = os.environ.get('GITHUB_REPOSITORY', '')
+          sprint_num = get_current_sprint()
+          sprint_label = f"sprint-{sprint_num:02d}"
+
+          g = get_github_client()
+          repo = g.get_repo(repo_name)
+          issues = get_issues(repo, labels=[sprint_label], state="open")
+
+          for issue in issues:
+              label_names = [l.name for l in issue.labels]
+              if ("agent-assigned" in label_names and
+                  "in-sprint" in label_names and
+                  "in-review" not in label_names):
+                  comments = list(issue.get_comments())
+                  for c in reversed(comments):
+                      if "agent-frontend" in (c.body or ""):
+                          with open(os.environ['GITHUB_OUTPUT'], 'a') as f:
+                              f.write(f"claimed_issue={issue.number}\n")
+                          break
+                  break
+          else:
+              print("No task available for agent-frontend this cycle")
+          EOF
+
+      - name: Write agent standup
+        if: steps.check.outputs.enabled == 'true'
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          CLAIMED_ISSUE: ${{ steps.claim.outputs.claimed_issue }}
+        run: |
+          python - << 'EOF'
+          import sys, os
+          from datetime import date
+          sys.path.insert(0, '.')
+          from scripts.utils.config import load_config, get_repo_root, get_current_sprint
+          from scripts.utils.file_utils import atomic_write
+
+          config = load_config()
+          root = get_repo_root()
+          sprint_num = get_current_sprint()
+          today = date.today().isoformat()
+          claimed = os.environ.get('CLAIMED_ISSUE', '')
+
+          standup_dir = root / f"sprint-{sprint_num:02d}" / "standup" / today
+          standup_dir.mkdir(parents=True, exist_ok=True)
+
+          content = f"""# Standup — agent-frontend
+<!-- Sprint: sprint-{sprint_num:02d} | Date: {today} | Author: agent-frontend -->
+
+## Yesterday
+- Reviewed UI tasks assigned by orchestrator
+
+## Today
+{f'- Working on #{claimed}: [implementing frontend task]' if claimed else '- No task assigned this cycle — awaiting orchestrator'}
+
+## Blockers
+None
+
+## Agent State
+- Role: frontend specialist
+- CI status: pending
+- Escalation needed: no
+- Last cycle: {today}
+"""
+          atomic_write(standup_dir / "agent-frontend.md", content)
+          print("Standup written for agent-frontend")
+          EOF
+
+      - name: Commit agent standup
+        if: steps.check.outputs.enabled == 'true'
+        run: |
+          git config user.email "scraut-bot@noreply.github.com"
+          git config user.name "Scraut Bot"
+          git add sprint-*/standup/
+          git diff --staged --quiet || git commit -m "chore: agent-frontend standup [skip ci]"
+          git push
