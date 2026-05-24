@@ -146,3 +146,106 @@ class TestInitCommand:
         cfg = yaml.safe_load((tmp_path / "workspace" / "scraut.yml").read_text())
         assert "base_url" in cfg["llm"]
         assert cfg["llm"]["base_url"] == ""
+
+    # --- scaffolded template files ---
+
+    def test_standup_template_created_for_each_member(self, tmp_path, monkeypatch):
+        monkeypatch.chdir(tmp_path)
+        monkeypatch.delenv("GITHUB_TOKEN", raising=False)
+        from datetime import date
+        today = date.today().isoformat()
+        CliRunner().invoke(cli, ["init"], input=_init_input(team="alice,bob"))
+        standup_dir = tmp_path / "workspace" / "sprint" / "01" / "standup" / today
+        assert (standup_dir / "alice.md").exists()
+        assert (standup_dir / "bob.md").exists()
+
+    def test_standup_template_has_correct_sections(self, tmp_path, monkeypatch):
+        monkeypatch.chdir(tmp_path)
+        monkeypatch.delenv("GITHUB_TOKEN", raising=False)
+        from datetime import date
+        today = date.today().isoformat()
+        CliRunner().invoke(cli, ["init"], input=_init_input(team="alice"))
+        content = (tmp_path / "workspace" / "sprint" / "01" / "standup" / today / "alice.md").read_text()
+        assert "## Yesterday" in content
+        assert "## Today" in content
+        assert "## Blockers" in content
+        assert "## Notes" in content
+        assert "alice" in content
+
+    def test_retro_template_created_for_each_member(self, tmp_path, monkeypatch):
+        monkeypatch.chdir(tmp_path)
+        monkeypatch.delenv("GITHUB_TOKEN", raising=False)
+        CliRunner().invoke(cli, ["init"], input=_init_input(team="alice,bob"))
+        retro_dir = tmp_path / "workspace" / "sprint" / "01" / "retrospective"
+        assert (retro_dir / "alice.md").exists()
+        assert (retro_dir / "bob.md").exists()
+
+    def test_retro_template_has_correct_sections(self, tmp_path, monkeypatch):
+        monkeypatch.chdir(tmp_path)
+        monkeypatch.delenv("GITHUB_TOKEN", raising=False)
+        CliRunner().invoke(cli, ["init"], input=_init_input(team="alice"))
+        content = (tmp_path / "workspace" / "sprint" / "01" / "retrospective" / "alice.md").read_text()
+        assert "## Went well" in content
+        assert "## Could improve" in content
+        assert "## Action items I'll own" in content
+        assert "Alice" in content
+
+    def test_sprint_meta_created(self, tmp_path, monkeypatch):
+        monkeypatch.chdir(tmp_path)
+        monkeypatch.delenv("GITHUB_TOKEN", raising=False)
+        CliRunner().invoke(cli, ["init"], input=_init_input(team="alice,bob"))
+        meta = tmp_path / "workspace" / "sprint" / "01" / "meta.md"
+        assert meta.exists()
+        content = meta.read_text()
+        assert "Sprint 1" in content
+        assert "Alice" in content
+
+    def test_grooming_backlog_created(self, tmp_path, monkeypatch):
+        monkeypatch.chdir(tmp_path)
+        monkeypatch.delenv("GITHUB_TOKEN", raising=False)
+        CliRunner().invoke(cli, ["init"], input=_init_input())
+        grooming = tmp_path / "workspace" / "sprint" / "01" / "grooming" / "backlog-ideas.md"
+        assert grooming.exists()
+        assert "Backlog Ideas" in grooming.read_text()
+
+    def test_capacity_template_created(self, tmp_path, monkeypatch):
+        monkeypatch.chdir(tmp_path)
+        monkeypatch.delenv("GITHUB_TOKEN", raising=False)
+        CliRunner().invoke(cli, ["init"], input=_init_input(team="alice,bob"))
+        capacity = tmp_path / "workspace" / "team" / "capacity.md"
+        assert capacity.exists()
+        content = capacity.read_text()
+        assert "alice" in content
+        assert "bob" in content
+
+    def test_okr_template_created(self, tmp_path, monkeypatch):
+        monkeypatch.chdir(tmp_path)
+        monkeypatch.delenv("GITHUB_TOKEN", raising=False)
+        CliRunner().invoke(cli, ["init"], input=_init_input())
+        okr = tmp_path / "workspace" / "okr" / "okr.md"
+        assert okr.exists()
+        assert "Objective" in okr.read_text()
+
+    def test_customer_feedback_template_created(self, tmp_path, monkeypatch):
+        monkeypatch.chdir(tmp_path)
+        monkeypatch.delenv("GITHUB_TOKEN", raising=False)
+        CliRunner().invoke(cli, ["init"], input=_init_input())
+        feedback = tmp_path / "workspace" / "customer" / "feedback.md"
+        assert feedback.exists()
+        assert "Customer Feedback" in feedback.read_text()
+
+    def test_milestones_readme_created(self, tmp_path, monkeypatch):
+        monkeypatch.chdir(tmp_path)
+        monkeypatch.delenv("GITHUB_TOKEN", raising=False)
+        CliRunner().invoke(cli, ["init"], input=_init_input(repo="myorg/my-repo"))
+        readme = tmp_path / "workspace" / "milestones" / "README.md"
+        assert readme.exists()
+        content = readme.read_text()
+        assert "Milestones" in content
+        assert "myorg/my-repo" in content
+
+    def test_output_mentions_standup_fill_in(self, tmp_path, monkeypatch):
+        monkeypatch.chdir(tmp_path)
+        monkeypatch.delenv("GITHUB_TOKEN", raising=False)
+        result = CliRunner().invoke(cli, ["init"], input=_init_input())
+        assert "standup" in result.output.lower()

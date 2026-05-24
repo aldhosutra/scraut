@@ -211,16 +211,160 @@ def velocity(sprint):
         click.echo(f"Error: {e}", err=True)
 
 
+_STANDUP_TEMPLATE = """\
+# Standup — {display_name}
+<!--
+  Sprint: sprint-{sprint_num:02d}
+  Date: {date}
+  Author: {login}
+
+  ─── NAVIGATION ──────────────────────────────────────────
+  📁 Sprint folder:   sprint-{sprint_num:02d}/
+  📋 Sprint meta:     sprint-{sprint_num:02d}/meta.md
+  📝 Your standup:    sprint-{sprint_num:02d}/standup/{date}/{login}.md
+  💬 Retro (when due): sprint-{sprint_num:02d}/retrospective/{login}.md
+  🗒️  Backlog ideas:   sprint-{sprint_num:02d}/grooming/backlog-ideas.md
+  🏁 Board:           [GitHub Projects - see scraut.yml portal.project_number]
+  ─────────────────────────────────────────────────────────
+-->
+
+## Yesterday
+<!-- What did you complete? Reference issues/PRs where applicable. -->
+
+## Today
+<!-- What will you work on today? Reference issues if possible. -->
+
+## Blockers
+<!-- Anything blocking your progress? Scraut tracks these automatically. -->
+<!-- Write "None" if no blockers. -->
+None
+
+## Notes
+<!-- Optional: OOO, reduced availability, context for the team -->
+"""
+
+_RETRO_TEMPLATE = """\
+# Retro — {display_name} — Sprint {sprint_num:02d}
+
+## Went well
+<!-- What went well this sprint? Be specific. -->
+
+## Could improve
+<!-- What would you change? Focus on process, not people. -->
+
+## Action items I'll own
+<!-- Personal commitments for next sprint. -->
+"""
+
+_META_TEMPLATE = """\
+# Sprint 1
+- Period: [Set when sprint starts]
+- Goal: [Set during sprint planning]
+- Team: {team_names}
+- Committed: TBD story points across TBD issues
+- Capacity note: [Check team/capacity.md for OOO]
+
+## Issues in sprint
+| Issue | Title | Epic | SP | Assignee |
+|-------|-------|------|----|---------|
+"""
+
+_CAPACITY_TEMPLATE = """\
+# Team Capacity — Sprint 1
+
+<!-- Record OOO days, part-time availability, or any capacity reductions.
+     Scraut uses this to adjust sprint planning recommendations. -->
+
+| Login | Available Days | Notes |
+|-------|---------------|-------|
+{capacity_rows}
+"""
+
+_OKR_TEMPLATE = """\
+# Objectives & Key Results
+
+<!-- Define team OKRs here. Scraut references these during sprint planning
+     to ensure sprint goals align with strategic objectives. -->
+
+## Objective 1
+[Describe what you want to achieve]
+
+### Key Result 1.1
+- Target: [Measurable outcome]
+- Current: [Current value]
+
+### Key Result 1.2
+- Target: [Measurable outcome]
+- Current: [Current value]
+
+## Objective 2
+[Describe what you want to achieve]
+
+### Key Result 2.1
+- Target: [Measurable outcome]
+- Current: [Current value]
+"""
+
+_CUSTOMER_FEEDBACK_TEMPLATE = """\
+# Customer Feedback
+
+<!-- Record customer feedback, support tickets, user research findings.
+     Scraut's backlog grooming agent uses this to suggest story priorities. -->
+
+## Feedback Log
+
+| Date | Source | Summary | Priority | Linked Issue |
+|------|--------|---------|----------|-------------|
+| {today} | [Channel/user] | [Summary] | medium | — |
+
+## Themes
+<!-- Recurring patterns the team has identified -->
+
+- [Theme 1]: [Description]
+"""
+
+_MILESTONES_README_TEMPLATE = """\
+# Milestones
+
+<!-- Each milestone gets its own file: milestones/<name>.md
+     Scraut's milestone agent reads these to track health and generate forecasts. -->
+
+## Milestone file format
+
+Create `milestones/v1.0.md` (or any name) with:
+
+```markdown
+# Milestone: v1.0
+- Due: YYYY-MM-DD
+- Goal: [What this release delivers]
+- GitHub milestone: https://github.com/{repo}/milestone/1
+
+## Epics
+- [ ] Epic: [Name] — [linked issue or description]
+
+## Risks
+- [Risk description] — Mitigation: [how you're handling it]
+
+## Definition of Done
+- [ ] All committed issues closed
+- [ ] Release notes drafted
+- [ ] Stakeholders notified
+```
+"""
+
+
 @cli.command()
 def init():
     """Interactive first-time setup wizard. Run once after cloning Scraut.
 
-    Creates workspace/scraut.yml, the full directory skeleton, and optionally
+    Creates workspace/scraut.yml, the full directory skeleton, scaffold
+    template files so team members see the expected format, and optionally
     creates GitHub labels if GITHUB_TOKEN is set.
 
     Example: scraut init
     """
     import yaml
+    from datetime import date as _date
 
     click.echo("\n" + "=" * 52)
     click.echo("  Scraut Setup Wizard")
@@ -330,7 +474,6 @@ def init():
     ]:
         p = workspace / d
         p.mkdir(parents=True, exist_ok=True)
-        (p / ".gitkeep").touch()
 
     # .scraut directories (bot-generated output)
     scraut_root = Path(".scraut")
@@ -345,6 +488,60 @@ def init():
         (p / ".gitkeep").touch()
 
     click.echo("  created  workspace/ and .scraut/ directory structure")
+
+    # Scaffold template files so team members see the expected format
+    today = _date.today().isoformat()
+    team_names = ", ".join(m["display"] for m in members)
+    capacity_rows = "\n".join(
+        f"| {m['login']} | 10 | |" for m in members
+    )
+
+    for member in members:
+        login = member["login"]
+        display = member["display"]
+
+        standup_dir = workspace / "sprint" / "01" / "standup" / today
+        standup_dir.mkdir(parents=True, exist_ok=True)
+        standup_file = standup_dir / f"{login}.md"
+        if not standup_file.exists():
+            standup_file.write_text(_STANDUP_TEMPLATE.format(
+                display_name=display, sprint_num=1, date=today, login=login,
+            ))
+
+        retro_dir = workspace / "sprint" / "01" / "retrospective"
+        retro_file = retro_dir / f"{login}.md"
+        if not retro_file.exists():
+            retro_file.write_text(_RETRO_TEMPLATE.format(
+                display_name=display, sprint_num=1,
+            ))
+
+    meta_file = workspace / "sprint" / "01" / "meta.md"
+    if not meta_file.exists():
+        meta_file.write_text(_META_TEMPLATE.format(team_names=team_names))
+
+    grooming_file = workspace / "sprint" / "01" / "grooming" / "backlog-ideas.md"
+    if not grooming_file.exists():
+        grooming_file.write_text(
+            "# Backlog Ideas\n<!-- Append new ideas below. Anyone can add. -->\n\n"
+        )
+
+    capacity_file = workspace / "team" / "capacity.md"
+    if not capacity_file.exists():
+        capacity_file.write_text(_CAPACITY_TEMPLATE.format(capacity_rows=capacity_rows))
+
+    okr_file = workspace / "okr" / "okr.md"
+    if not okr_file.exists():
+        okr_file.write_text(_OKR_TEMPLATE)
+
+    customer_file = workspace / "customer" / "feedback.md"
+    if not customer_file.exists():
+        customer_file.write_text(_CUSTOMER_FEEDBACK_TEMPLATE.format(today=today))
+
+    milestones_file = workspace / "milestones" / "README.md"
+    if not milestones_file.exists():
+        milestones_file.write_text(_MILESTONES_README_TEMPLATE.format(repo=repo))
+
+    click.echo("  scaffolded  workspace template files for Sprint 1")
 
     # GitHub labels (requires GITHUB_TOKEN)
     if repo != "your-org/your-repo" and os.environ.get("GITHUB_TOKEN"):
@@ -366,16 +563,18 @@ def init():
     click.echo("  Done! Next steps:\n")
     click.echo(f"  1. Edit workspace/scraut.yml")
     click.echo(f"       Fill in slack_id and email for each team member.")
-    click.echo(f"\n  2. Set GitHub Secrets  (Settings → Secrets → Actions)")
+    click.echo(f"\n  2. Fill in today's standup")
+    click.echo(f"       workspace/sprint/01/standup/{today}/<login>.md")
+    click.echo(f"\n  3. Set GitHub Secrets  (Settings → Secrets → Actions)")
     click.echo(f"       [ ] {_key}")
     click.echo(f"       [ ] SLACK_WEBHOOK")
     click.echo(f"       [ ] SLACK_BOT_TOKEN")
-    click.echo(f"\n  3. Create Sprint 1")
+    click.echo(f"\n  4. Create Sprint 1")
     click.echo(f"       python apps/automation/scraut/scrum/sprint/create_sprint.py \\")
     click.echo(f"              --sprint 1 --repo {repo}")
-    click.echo(f"\n  4. Commit and push")
+    click.echo(f"\n  5. Commit and push")
     click.echo(f"       git add . && git commit -m 'chore: scraut setup [skip ci]' && git push")
-    click.echo(f"\n  5. Trigger sprint-planning from GitHub Actions UI")
+    click.echo(f"\n  6. Trigger sprint-planning from GitHub Actions UI")
     click.echo("")
 
 
