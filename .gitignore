@@ -61,8 +61,8 @@ yarn-debug.log*
 yarn-error.log*
 
 # Generated output (tracked separately per bot zone rules)
-# portal/ is bot-generated but intentionally committed
-# Do not ignore portal/
+portal/data.json
+portal/index.html
 
 # Logs
 *.log

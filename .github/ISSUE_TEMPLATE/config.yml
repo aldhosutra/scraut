@@ -1,0 +1,5 @@
+blank_issues_enabled: true
+contact_links:
+  - name: Scraut Documentation
+    url: https://github.com/[org]/[repo]/blob/main/00-ROADMAP.md
+    about: How Scraut works
