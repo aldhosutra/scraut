@@ -2,7 +2,7 @@ name: Scraut — Incident to Backlog
 on:
   push:
     paths:
-      - 'sprint-*/incidents/**/action-items.md'
+      - '.scraut/sprint/*/incidents/**/action-items.md'
 
 jobs:
   create-backlog-items:
@@ -33,11 +33,11 @@ jobs:
           import sys, os
           sys.path.insert(0, '.')
           from pathlib import Path
-          from scripts.utils.config import load_config
-          from scripts.utils.file_utils import read_file
-          from scripts.github.api import get_github_client, create_issue, ensure_label_exists
-          from scripts.llm.client import complete_json
-          from scripts.llm.prompts import SYSTEM_SCRUM_ASSISTANT
+          from scraut.platform.utils.config import load_config
+          from scraut.platform.utils.file_utils import read_file
+          from scraut.platform.github.api import get_github_client, create_issue, ensure_label_exists
+          from scraut.platform.llm.client import complete_json
+          from scraut.platform.llm.prompts import SYSTEM_SCRUM_ASSISTANT
 
           config = load_config()
           incident_file = Path('${{ steps.detect.outputs.incident_file }}')

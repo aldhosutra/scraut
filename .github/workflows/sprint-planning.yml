@@ -26,9 +26,9 @@ jobs:
           ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
           SLACK_WEBHOOK: ${{ secrets.SLACK_WEBHOOK }}
         run: |
-          python scripts/sprint/create_sprint.py \
+          python apps/automation/scraut/scrum/sprint/create_sprint.py \
             --sprint ${{ github.event.inputs.sprint_num }} \
             --repo ${{ github.event.inputs.repo }}
-          python scripts/sprint/create_planning_pr.py \
+          python apps/automation/scraut/scrum/sprint/create_planning_pr.py \
             --sprint ${{ github.event.inputs.sprint_num }} \
             --repo ${{ github.event.inputs.repo }}

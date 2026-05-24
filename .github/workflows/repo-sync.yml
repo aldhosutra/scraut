@@ -28,7 +28,7 @@ jobs:
         run: |
           DATE="${{ github.event.inputs.date }}"
           if [ -z "$DATE" ]; then DATE=$(date +%Y-%m-%d); fi
-          python scripts/repo_sync/fetch_activity.py --date $DATE
+          python apps/automation/scraut/scrum/repo_sync/fetch_activity.py --date $DATE
 
       - name: Compute delta vs yesterday
         env:
@@ -36,7 +36,7 @@ jobs:
         run: |
           DATE="${{ github.event.inputs.date }}"
           if [ -z "$DATE" ]; then DATE=$(date +%Y-%m-%d); fi
-          python scripts/repo_sync/compute_delta.py --date $DATE
+          python apps/automation/scraut/scrum/repo_sync/compute_delta.py --date $DATE
 
       - name: Pre-fill standup Yesterday sections
         env:
@@ -44,13 +44,13 @@ jobs:
         run: |
           DATE="${{ github.event.inputs.date }}"
           if [ -z "$DATE" ]; then DATE=$(date +%Y-%m-%d); fi
-          python scripts/repo_sync/prefill_standups.py --date $DATE
+          python apps/automation/scraut/scrum/repo_sync/prefill_standups.py --date $DATE
 
       - name: Commit activity files
         run: |
           git config user.email "scraut-bot@noreply.github.com"
           git config user.name "Scraut Bot"
-          git add sprint-*/code/ sprint-*/standup/
+          git add .scraut/sprint/*/code/ workspace/sprint/*/standup/
           git diff --staged --quiet || git commit -m "chore: repo sync $(date +%Y-%m-%d) [skip ci]"
           git push
 
@@ -69,4 +69,4 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           SLACK_WEBHOOK: ${{ secrets.SLACK_WEBHOOK }}
-        run: python scripts/repo_sync/notify_aging_prs.py
+        run: python apps/automation/scraut/scrum/repo_sync/notify_aging_prs.py

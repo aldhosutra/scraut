@@ -21,11 +21,11 @@ jobs:
           ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
           SLACK_WEBHOOK: ${{ secrets.SLACK_WEBHOOK }}
         run: |
-          python scripts/backlog/prioritize_backlog.py --repo ${{ github.repository }}
+          python apps/automation/scraut/scrum/backlog/prioritize_backlog.py --repo ${{ github.repository }}
 
       - name: Check for scope creep
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           SLACK_WEBHOOK: ${{ secrets.SLACK_WEBHOOK }}
         run: |
-          python scripts/sprint/check_scope_creep.py --repo ${{ github.repository }}
+          python apps/automation/scraut/scrum/sprint/check_scope_creep.py --repo ${{ github.repository }}

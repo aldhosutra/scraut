@@ -29,8 +29,8 @@ jobs:
           python - << 'EOF'
           import sys, os, re
           sys.path.insert(0, '.')
-          from scripts.utils.config import load_config, get_current_sprint
-          from scripts.notifications.slack_post import post_to_slack
+          from scraut.platform.utils.config import load_config, get_current_sprint
+          from scraut.platform.notifications.slack_post import post_to_slack
 
           config = load_config()
           sprint_num = get_current_sprint()

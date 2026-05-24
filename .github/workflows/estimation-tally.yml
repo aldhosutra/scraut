@@ -19,7 +19,7 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          python scripts/backlog/tally_estimation.py \
+          python apps/automation/scraut/scrum/backlog/tally_estimation.py \
             --issue ${{ github.event.issue.number }} \
             --comment ${{ github.event.comment.id }} \
             --repo ${{ github.repository }}

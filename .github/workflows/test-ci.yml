@@ -22,8 +22,9 @@ jobs:
 
       - name: Run unit tests
         run: |
-          pytest tests/unit/ -m unit -v \
-            --cov=scripts \
+          pytest test/unit/ -m unit -v \
+            --cov=scraut.scrum \
+            --cov=scraut.platform \
             --cov-report=xml \
             --cov-report=term-missing \
             --cov-fail-under=70
@@ -50,7 +51,7 @@ jobs:
 
       - name: Run integration tests
         run: |
-          pytest tests/integration/ -m integration -v \
+          pytest test/integration/ -m integration -v \
             --tb=short
 
   lint:
@@ -61,4 +62,4 @@ jobs:
       - uses: actions/setup-python@v5
         with: { python-version: '3.11' }
       - run: pip install flake8
-      - run: flake8 scripts/ --max-line-length=100 --ignore=E501,W503
+      - run: flake8 apps/automation/scraut/scrum/ apps/automation/scraut/platform/ --max-line-length=100 --ignore=E501,W503

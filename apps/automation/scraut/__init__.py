@@ -1,0 +1,1 @@
+"""Scraut automation package."""

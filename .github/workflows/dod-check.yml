@@ -22,7 +22,7 @@ jobs:
           # Only check sprint issues (labelled with in-sprint or sp:N)
           HAS_SPRINT=$(python -c "
           import os
-          from scripts.github.api import get_github_client
+          from scraut.platform.github.api import get_github_client
           g = get_github_client()
           repo = g.get_repo('${{ github.repository }}')
           issue = repo.get_issue(${{ github.event.issue.number }})
@@ -30,7 +30,7 @@ jobs:
           print('yes' if any(l.startswith('sp:') or l == 'in-sprint' for l in labels) else 'no')
           ")
           if [ "$HAS_SPRINT" = "yes" ]; then
-            python scripts/backlog/dod_check.py \
+            python apps/automation/scraut/scrum/backlog/dod_check.py \
               --issue ${{ github.event.issue.number }} \
               --repo ${{ github.repository }}
           fi

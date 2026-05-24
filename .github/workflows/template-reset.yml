@@ -18,12 +18,12 @@ jobs:
       - run: pip install -r requirements.txt
 
       - name: Reset standup templates
-        run: python scripts/standup/reset_templates.py
+        run: python apps/automation/scraut/scrum/standup/reset_templates.py
 
       - name: Commit new templates
         run: |
           git config user.email "scraut-bot@noreply.github.com"
           git config user.name "Scraut Bot"
-          git add sprint-*/standup/
+          git add workspace/sprint/*/standup/
           git diff --staged --quiet || git commit -m "chore: standup templates $(date +%Y-%m-%d) [skip ci]"
           git push

@@ -27,12 +27,12 @@ jobs:
         run: |
           DATE="${{ github.event.inputs.date }}"
           if [ -z "$DATE" ]; then DATE=$(date +%Y-%m-%d); fi
-          python scripts/standup/generate_summary.py --date "$DATE"
+          python apps/automation/scraut/scrum/standup/generate_summary.py --date "$DATE"
 
       - name: Commit summary
         run: |
           git config user.email "scraut-bot@noreply.github.com"
           git config user.name "Scraut Bot"
-          git add sprint-*/standup/summary/
+          git add .scraut/sprint/*/standup/summary/
           git diff --staged --quiet || git commit -m "chore: standup summary $(date +%Y-%m-%d) [skip ci]"
           git push

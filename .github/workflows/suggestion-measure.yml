@@ -27,13 +27,13 @@ jobs:
           import sys
           from pathlib import Path
           sys.path.insert(0, '.')
-          from scripts.utils.config import load_config
-          from scripts.suggestions.measure import measure_suggestion
+          from scraut.platform.utils.config import load_config
+          from scraut.scrum.suggestions.measure import measure_suggestion
           import os
 
           config = load_config()
           repo = os.environ.get('GITHUB_REPOSITORY', '')
-          implemented_dir = Path('suggestions/implemented')
+          implemented_dir = Path('.scraut/suggestions/implemented')
 
           if not implemented_dir.exists():
               print("No implemented suggestions to measure.")
@@ -48,6 +48,6 @@ jobs:
         run: |
           git config user.email "scraut-bot@noreply.github.com"
           git config user.name "Scraut Bot"
-          git add suggestions/
+          git add .scraut/suggestions/
           git diff --staged --quiet || git commit -m "chore: suggestion measurements [skip ci]"
           git push

@@ -2,7 +2,7 @@ name: Scraut — Milestone Planning
 on:
   push:
     paths:
-      - 'milestones/*/milestone.md'
+      - 'workspace/milestones/*/milestone.md'
 
 jobs:
   decompose-milestone:
@@ -20,7 +20,7 @@ jobs:
       - name: Detect changed milestone file
         id: detect
         run: |
-          CHANGED=$(git diff --name-only HEAD~1 HEAD | grep 'milestones/.*/milestone.md' | head -1)
+          CHANGED=$(git diff --name-only HEAD~1 HEAD | grep 'workspace/milestones/.*/milestone.md' | head -1)
           echo "milestone_file=$CHANGED" >> $GITHUB_OUTPUT
 
       - name: Decompose milestone
@@ -29,7 +29,7 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
         run: |
-          python scripts/milestone/decompose.py \
+          python apps/automation/scraut/scrum/milestone/decompose.py \
             --milestone ${{ steps.detect.outputs.milestone_file }} \
             --repo ${{ github.repository }}
 
@@ -37,6 +37,6 @@ jobs:
         run: |
           git config user.email "scraut-bot@noreply.github.com"
           git config user.name "Scraut Bot"
-          git add milestones/
+          git add workspace/milestones/ .scraut/milestones/
           git diff --staged --quiet || git commit -m "chore: milestone breakdown [skip ci]"
           git push

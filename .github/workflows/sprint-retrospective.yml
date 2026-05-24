@@ -25,7 +25,7 @@ jobs:
           ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
           SLACK_WEBHOOK: ${{ secrets.SLACK_WEBHOOK }}
         run: |
-          python scripts/sprint/synthesise_retrospective.py \
+          python apps/automation/scraut/scrum/sprint/synthesise_retrospective.py \
             --sprint ${{ github.event.inputs.sprint_num }} \
             --repo ${{ github.repository }}
 
@@ -33,6 +33,6 @@ jobs:
         run: |
           git config user.email "scraut-bot@noreply.github.com"
           git config user.name "Scraut Bot"
-          git add sprint-*/retrospective/summary.md
+          git add .scraut/sprint/*/retrospective/summary.md
           git diff --staged --quiet || git commit -m "chore: sprint retrospective summary [skip ci]"
           git push

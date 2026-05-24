@@ -31,5 +31,6 @@ pytest-mock>=3.14.0
 pytest-cov>=5.0.0
 responses>=0.25.0
 
-# Install this package so 'from scripts.X import Y' works when scripts run directly
+# Install this package so 'from scraut.scrum.X import Y' and
+# 'from scraut.platform.X import Y' work when modules run directly.
 -e .

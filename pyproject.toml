@@ -7,6 +7,9 @@ name = "scraut"
 version = "0.1.0"
 requires-python = ">=3.11"
 
+[project.scripts]
+scraut = "scraut.cli.cli:main"
+
 [tool.setuptools.packages.find]
-where = ["."]
-include = ["scripts*"]
+where = ["apps/automation"]
+include = ["scraut*"]

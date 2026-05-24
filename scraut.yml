@@ -97,6 +97,11 @@ agents:
   # semi-auto: agents run freely, checkpoint at sprint boundaries
   # full-auto: agents run continuously, humans receive reports only
 
+paths:
+  workspace: workspace              # Human/team-editable source-of-truth files
+  scraut: .scraut                   # Generated Scraut artifacts and internal state
+  portal: apps/portal               # Deployable stakeholder portal app/output
+
 notifications:
   slack_webhook: ""                 # Set via SLACK_WEBHOOK secret
   morning_dm: true                  # Daily standup link DM at 7:55am

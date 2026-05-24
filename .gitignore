@@ -1,10 +1,13 @@
-# Python
+# Python bytecode/cache
 __pycache__/
 *.py[cod]
 *$py.class
 *.so
+
+# Python packaging/build output
 *.egg
 *.egg-info/
+.eggs/
 dist/
 build/
 eggs/
@@ -13,12 +16,14 @@ var/
 sdist/
 develop-eggs/
 .installed.cfg
-lib/
 lib64/
 wheels/
+pip-wheel-metadata/
 
 # Virtual environments
 .env
+.env.*
+!.env.example
 .venv
 env/
 venv/
@@ -26,17 +31,30 @@ ENV/
 env.bak/
 venv.bak/
 
-# Testing
+# Testing/coverage
 .pytest_cache/
 .coverage
 .coverage.*
 htmlcov/
 .tox/
+.nox/
 nosetests.xml
 coverage.xml
+coverage.json
 *.cover
+junit.xml
+test-results/
 
-# IDE
+# Type/lint/tool caches
+.mypy_cache/
+.ruff_cache/
+.pyre/
+.pytype/
+.dmypy.json
+dmypy.json
+.hypothesis/
+
+# IDE/editor
 .idea/
 .vscode/
 *.swp
@@ -45,25 +63,46 @@ coverage.xml
 
 # OS
 .DS_Store
+.AppleDouble
+.LSOverride
 Thumbs.db
 
 # Secrets (never commit)
 .env.local
+.env.*.local
 secrets.yml
 secrets.yaml
 *.pem
 *.key
+*.p12
+*.pfx
 
-# Node (for npx create-scraut)
+# Node / frontend apps
 node_modules/
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
+pnpm-debug.log*
+.npm/
+.yarn/
+.pnpm-store/
+.next/
+.nuxt/
+.vite/
+coverage/
 
-# Generated output (tracked separately per bot zone rules)
-portal/data.json
-portal/index.html
+# Scraut generated portal output
+apps/portal/data.json
+apps/portal/index.html
+apps/portal/out/
+apps/portal/dist/
 
-# Logs
+# Local Codex/agent tooling
+.claude/settings.local.json
+.code-review-graph/
+
+# Logs/runtime
 *.log
 logs/
+*.pid
+*.seed

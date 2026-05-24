@@ -39,9 +39,9 @@ jobs:
           import sys
           import os
           sys.path.insert(0, '.')
-          from scripts.utils.config import load_config
-          from scripts.agents.orchestrator import run_orchestrator_cycle
-          from scripts.agents.deadlock_detect import detect_all_deadlocks
+          from scraut.platform.utils.config import load_config
+          from scraut.scrum.agents.orchestrator import run_orchestrator_cycle
+          from scraut.scrum.agents.deadlock_detect import detect_all_deadlocks
 
           config = load_config()
           repo = os.environ.get('GITHUB_REPOSITORY', '')
@@ -58,7 +58,7 @@ jobs:
         run: |
           git config user.email "scraut-bot@noreply.github.com"
           git config user.name "Scraut Bot"
-          git add sprint-*/standup/
+          git add workspace/sprint/*/standup/
           git diff --staged --quiet || git commit -m "chore: orchestrator cycle [skip ci]"
           git push
 
@@ -86,8 +86,8 @@ jobs:
           python - << 'EOF'
           import sys, os
           sys.path.insert(0, '.')
-          from scripts.utils.config import load_config
-          from scripts.agents.checkpoint import process_checkpoint_response
+          from scraut.platform.utils.config import load_config
+          from scraut.scrum.agents.checkpoint import process_checkpoint_response
 
           config = load_config()
           repo = os.environ.get('GITHUB_REPOSITORY', '')

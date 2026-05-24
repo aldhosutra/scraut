@@ -24,7 +24,7 @@ jobs:
           ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
           SLACK_WEBHOOK: ${{ secrets.SLACK_WEBHOOK }}
         run: |
-          python scripts/milestone/planning_session.py \
+          python apps/automation/scraut/scrum/milestone/planning_session.py \
             --issue ${{ github.event.issue.number }} \
             --comment-body "${{ github.event.comment.body }}" \
             --repo ${{ github.repository }}
@@ -33,6 +33,6 @@ jobs:
         run: |
           git config user.email "scraut-bot@noreply.github.com"
           git config user.name "Scraut Bot"
-          git add milestones/
+          git add .scraut/milestones/
           git diff --staged --quiet || git commit -m "chore: planning session update [skip ci]"
           git push

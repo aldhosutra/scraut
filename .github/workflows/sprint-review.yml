@@ -28,13 +28,13 @@ jobs:
           ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
           SLACK_WEBHOOK: ${{ secrets.SLACK_WEBHOOK }}
         run: |
-          python scripts/sprint/close_sprint.py \
+          python apps/automation/scraut/scrum/sprint/close_sprint.py \
             --sprint ${{ github.event.inputs.sprint_num }} \
             --repo ${{ github.event.inputs.repo }}
-          python scripts/reports/burndown_chart.py \
+          python apps/automation/scraut/scrum/reports/burndown_chart.py \
             --sprint ${{ github.event.inputs.sprint_num }} \
             --repo ${{ github.event.inputs.repo }}
-          python scripts/sprint/generate_review.py \
+          python apps/automation/scraut/scrum/sprint/generate_review.py \
             --sprint ${{ github.event.inputs.sprint_num }} \
             --repo ${{ github.event.inputs.repo }}
 
@@ -42,7 +42,7 @@ jobs:
         run: |
           git config user.email "scraut-bot@noreply.github.com"
           git config user.name "Scraut Bot"
-          git add sprint-*/review/ sprint-*/standup/summary/
+          git add .scraut/sprint/*/review/ .scraut/sprint/*/standup/summary/
           SPRINT="${{ github.event.inputs.sprint_num }}"
           git diff --staged --quiet || git commit -m "chore: sprint ${SPRINT} review [skip ci]"
           git push

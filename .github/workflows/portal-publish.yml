@@ -4,7 +4,7 @@ on:
   push:
     branches: [main]
     paths:
-      - 'portal/**'
+      - 'apps/portal/**'
   workflow_dispatch:
 
 permissions:
@@ -31,7 +31,7 @@ jobs:
       - name: Upload portal artifact
         uses: actions/upload-pages-artifact@v3
         with:
-          path: portal/
+          path: apps/portal/
 
       - name: Deploy to GitHub Pages
         id: deployment

@@ -25,4 +25,4 @@ jobs:
           SMTP_PORT: ${{ secrets.SMTP_PORT }}
           SMTP_USER: ${{ secrets.SMTP_USER }}
           SMTP_PASS: ${{ secrets.SMTP_PASS }}
-        run: python scripts/notifications/weekly_digest.py
+        run: python apps/automation/scraut/platform/notifications/weekly_digest.py

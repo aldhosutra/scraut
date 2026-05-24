@@ -25,12 +25,12 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
         run: |
-          python scripts/insights/generate_insights.py --repo ${{ github.repository }}
+          python apps/automation/scraut/scrum/insights/generate_insights.py --repo ${{ github.repository }}
 
       - name: Commit insights
         run: |
           git config user.email "scraut-bot@noreply.github.com"
           git config user.name "Scraut Bot"
-          git add insights/
+          git add .scraut/insights/
           git diff --staged --quiet || git commit -m "chore: cross-sprint insights update [skip ci]"
           git push
