@@ -321,3 +321,55 @@ Reply with ONLY JSON:
   "concern_level": "none|low|medium|high"
 }}
 """
+
+STATE_CLASSIFICATION = """
+You are classifying the current state of a GitHub issue based on available signals.
+
+Issue: #{issue_number} — {issue_title}
+
+Available signals:
+{signals}
+
+Valid states: {valid_states}
+
+Instructions:
+- Choose the single most appropriate state from the valid states list
+- Use "In Progress" if there are any signals of active work
+- Use "Ready" if the issue is in the sprint but no active signals
+- Use "Backlog" if there is no evidence it has been started
+- Reply with ONLY JSON:
+{{
+  "state": "chosen state",
+  "reasoning": "one sentence"
+}}
+"""
+
+WEEKLY_DIGEST_NARRATIVE = """
+You are writing the weekly stakeholder digest for Sprint {sprint_num}.
+Week ending: {week_ending}
+
+## Sprint review summary:
+{sprint_review}
+
+## Standup summaries from this week:
+{standup_summaries}
+
+## Velocity trends:
+{velocity_trends}
+
+## Blocker patterns:
+{blocker_patterns}
+
+## Instructions:
+Write a concise weekly digest suitable for non-technical stakeholders (3–4 paragraphs).
+Cover:
+1. What the team accomplished this week (outcomes, not task lists)
+2. What is in progress heading into next week
+3. Any significant blockers or risks the stakeholder should know about
+4. One forward-looking sentence about the sprint trajectory
+
+Plain English, no technical jargon, no issue numbers.
+Maximum 300 words.
+
+Output only the markdown. No preamble.
+"""

@@ -1,0 +1,43 @@
+name: Scraut — Visibility Engine
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'sprint-*/standup/**'
+      - 'sprint-*/code/**'
+      - 'sprint-*/meta.md'
+  schedule:
+    - cron: '*/30 * * * *'  # every 30 minutes
+  workflow_dispatch:
+
+jobs:
+  derive-and-sync:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with: { python-version: '3.11' }
+
+      - run: pip install -r requirements.txt
+
+      - name: Sync board from text artifacts
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+        run: python scripts/visibility/sync_board.py
+
+      - name: Generate stakeholder portal
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+        run: python scripts/visibility/generate_portal.py
+
+      - name: Commit portal output
+        run: |
+          git config user.email "scraut-bot@noreply.github.com"
+          git config user.name "Scraut Bot"
+          git add portal/
+          git diff --staged --quiet || git commit -m "chore: visibility engine update $(date +%Y-%m-%dT%H:%M) [skip ci]"
+          git push

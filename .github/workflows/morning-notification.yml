@@ -1,0 +1,23 @@
+name: Scraut — Morning Notification
+
+on:
+  schedule:
+    - cron: '55 0 * * 1-5'  # 7:55 AM Jakarta (UTC+7) = 00:55 UTC, weekdays only
+  workflow_dispatch:
+
+jobs:
+  morning-dm:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with: { python-version: '3.11' }
+
+      - run: pip install -r requirements.txt
+
+      - name: Send morning standup DMs
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          SLACK_BOT_TOKEN: ${{ secrets.SLACK_BOT_TOKEN }}
+        run: python scripts/notifications/morning_dm.py
