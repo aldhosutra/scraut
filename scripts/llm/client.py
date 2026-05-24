@@ -95,6 +95,41 @@ def _call_ollama(prompt: str, system: Optional[str], max_tokens: int) -> str:
     return response.json()["response"]
 
 
+def complete_batch(prompts: list, system: Optional[str] = None,
+                   max_tokens: Optional[int] = None) -> list:
+    """
+    Process multiple prompts in a single LLM call to reduce token overhead.
+    Each prompt is separated with a numbered marker.
+    Use when batching multiple independent requests (e.g., triage 5 issues at once).
+    """
+    config = get_llm_config()
+    if not config.get("cost_controls", {}).get("batch_where_possible"):
+        return [complete(p, system, max_tokens) for p in prompts]
+
+    if not prompts:
+        return []
+
+    batch_prompt = "Answer each numbered prompt INDEPENDENTLY. Reply with JSON array.\n\n"
+    for i, p in enumerate(prompts, 1):
+        batch_prompt += f"=== PROMPT {i} ===\n{p}\n\n"
+    batch_prompt += (
+        f"Reply with ONLY a JSON array of {len(prompts)} strings, "
+        f"one result per prompt:\n"
+        f'["result for prompt 1", "result for prompt 2", ...]'
+    )
+
+    raw = complete(batch_prompt, system, max_tokens=max_tokens or 2000)
+    try:
+        clean = re.sub(r"```(?:json)?\s*", "", raw).strip().rstrip("`").strip()
+        results = json.loads(clean)
+        if isinstance(results, list) and len(results) == len(prompts):
+            return results
+    except Exception:
+        pass
+
+    return [complete(p, system, max_tokens) for p in prompts]
+
+
 def complete_json(prompt: str, system: Optional[str] = None) -> dict:
     """Call LLM expecting JSON output. Strips markdown fences before parsing."""
     text = complete(prompt, system)

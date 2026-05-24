@@ -1,0 +1,47 @@
+name: Scraut — Sprint Planning PR Merged
+on:
+  pull_request:
+    types: [closed]
+    branches: [main]
+
+jobs:
+  confirm-sprint:
+    # Only run when a sprint planning PR is merged
+    if: |
+      github.event.pull_request.merged == true &&
+      contains(github.event.pull_request.labels.*.name, 'sprint-planning')
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - uses: actions/setup-python@v5
+        with: { python-version: '3.11' }
+
+      - run: pip install -r requirements.txt
+
+      - name: Sprint committed — generate insights and notify
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          SLACK_WEBHOOK: ${{ secrets.SLACK_WEBHOOK }}
+        run: |
+          python - << 'EOF'
+          import sys, os, re
+          sys.path.insert(0, '.')
+          from scripts.utils.config import load_config, get_current_sprint
+          from scripts.notifications.slack_post import post_to_slack
+
+          config = load_config()
+          sprint_num = get_current_sprint()
+          webhook = config.get('notifications', {}).get('slack_webhook')
+          pr_title = """${{ github.event.pull_request.title }}"""
+
+          if webhook:
+              post_to_slack(webhook,
+                  f"🎯 *Sprint {sprint_num:02d} is now committed!*\n"
+                  f"Planning PR merged: {pr_title}\n"
+                  f"Sprint starts today. Standups begin tomorrow at 9am."
+              )
+          print(f"Sprint {sprint_num} confirmed via planning PR merge")
+          EOF

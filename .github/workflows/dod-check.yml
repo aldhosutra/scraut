@@ -1,0 +1,36 @@
+name: Scraut — Definition of Done Check
+on:
+  issues:
+    types: [closed]
+
+jobs:
+  dod-check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with: { python-version: '3.11' }
+
+      - run: pip install -r requirements.txt
+
+      - name: Check Definition of Done
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+        run: |
+          # Only check sprint issues (labelled with in-sprint or sp:N)
+          HAS_SPRINT=$(python -c "
+          import os
+          from scripts.github.api import get_github_client
+          g = get_github_client()
+          repo = g.get_repo('${{ github.repository }}')
+          issue = repo.get_issue(${{ github.event.issue.number }})
+          labels = [l.name for l in issue.labels]
+          print('yes' if any(l.startswith('sp:') or l == 'in-sprint' for l in labels) else 'no')
+          ")
+          if [ "$HAS_SPRINT" = "yes" ]; then
+            python scripts/backlog/dod_check.py \
+              --issue ${{ github.event.issue.number }} \
+              --repo ${{ github.repository }}
+          fi

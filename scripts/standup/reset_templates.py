@@ -19,13 +19,15 @@ STANDUP_TEMPLATE = """# Standup — {display_name}
   Sprint: sprint-{sprint_num:02d}
   Date: {date}
   Author: {login}
-  Pre-filled: No (edit manually or wait for repo sync pre-fill)
 
-  Navigation:
-  - Current sprint: sprint-{sprint_num:02d}/
-  - Sprint board: [GitHub Projects link]
-  - Backlog: sprint-{sprint_num:02d}/grooming/backlog-ideas.md
-  - Blockers from yesterday: sprint-{sprint_num:02d}/standup/summary/
+  ─── NAVIGATION ──────────────────────────────────────────
+  📁 Sprint folder:   sprint-{sprint_num:02d}/
+  📋 Sprint meta:     sprint-{sprint_num:02d}/meta.md
+  📝 Your standup:    sprint-{sprint_num:02d}/standup/{date}/{login}.md
+  💬 Retro (when due): sprint-{sprint_num:02d}/retrospective/{login}.md
+  🗒️  Backlog ideas:   sprint-{sprint_num:02d}/grooming/backlog-ideas.md
+  🏁 Board:           [GitHub Projects - see scraut.yml portal.project_number]
+  ─────────────────────────────────────────────────────────
 -->
 
 ## Yesterday

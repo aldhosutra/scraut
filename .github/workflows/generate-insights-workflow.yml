@@ -1,0 +1,36 @@
+name: Scraut — Generate Insights
+on:
+  workflow_run:
+    workflows: ["Scraut — Sprint Review"]
+    types: [completed]
+  schedule:
+    - cron: '0 4 1 * *'   # First day of month at 4am — monthly cross-sprint insights
+  workflow_dispatch:
+
+jobs:
+  generate-insights:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - uses: actions/setup-python@v5
+        with: { python-version: '3.11' }
+
+      - run: pip install -r requirements.txt
+
+      - name: Generate cross-sprint insights
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+        run: |
+          python scripts/insights/generate_insights.py --repo ${{ github.repository }}
+
+      - name: Commit insights
+        run: |
+          git config user.email "scraut-bot@noreply.github.com"
+          git config user.name "Scraut Bot"
+          git add insights/
+          git diff --staged --quiet || git commit -m "chore: cross-sprint insights update [skip ci]"
+          git push

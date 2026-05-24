@@ -1,12 +1,15 @@
 """
 scripts/sprint/synthesise_retrospective.py
-Synthesise individual retrospective entries into a team summary using LLM.
-Writes to sprint-N/retrospective/summary.md (bot-generated).
+Read all individual retrospective files, synthesise with LLM,
+write sprint-N/retrospective/summary.md (bot-generated).
+Also check if previous retro action items were followed up.
 """
 import argparse
 import logging
-from scripts.utils.config import load_config, get_repo_root, get_current_sprint
-from scripts.utils.file_utils import atomic_write, read_file
+from datetime import date
+from pathlib import Path
+from scripts.utils.config import load_config, get_repo_root
+from scripts.utils.file_utils import atomic_write, read_file, extract_section
 from scripts.llm.client import complete
 from scripts.llm.prompts import RETROSPECTIVE_SYNTHESIS, SYSTEM_SCRUM_ASSISTANT
 from scripts.sprint.calculate_velocity import calculate_sprint_velocity
@@ -16,50 +19,106 @@ logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
 
-def synthesise_retrospective(sprint_num: int, repo_name: str, config: dict,
-                              dry_run: bool = False) -> str:
+def check_previous_retro_followthrough(sprint_num: int, config: dict) -> str:
+    """Check if previous sprint's retro action items were addressed."""
+    root = get_repo_root()
+    if sprint_num <= 1:
+        return ""
+
+    prev_summary = read_file(root / f"sprint-{sprint_num-1:02d}" / "retrospective" / "summary.md")
+    if not prev_summary:
+        return ""
+
+    prev_actions = extract_section(prev_summary, "Action items")
+    if not prev_actions:
+        return ""
+
+    current_meta = read_file(root / f"sprint-{sprint_num:02d}" / "meta.md") or ""
+    action_items = [line.strip().lstrip("- ").strip()
+                    for line in prev_actions.split("\n")
+                    if line.strip().startswith("-")]
+
+    not_addressed = []
+    for action in action_items:
+        if len(action) < 10:
+            continue
+        keywords = set(action.lower().split())
+        keywords.discard("the")
+        keywords.discard("a")
+        if not any(kw in current_meta.lower() for kw in list(keywords)[:3]):
+            not_addressed.append(action)
+
+    if not_addressed:
+        return (
+            "\n\n## ⚠️ Unresolved action items from Sprint {}\n".format(sprint_num - 1)
+            + "\n".join(f"- {a}" for a in not_addressed)
+            + "\n\n*These items were not tracked in this sprint's planning. "
+              "Consider adding them to the next sprint backlog.*\n"
+        )
+    return ""
+
+
+def synthesise_retrospective(sprint_num: int, repo_name: str, config: dict) -> None:
     root = get_repo_root()
     retro_dir = root / f"sprint-{sprint_num:02d}" / "retrospective"
 
-    retro_files = list(retro_dir.glob("*.md"))
-    retro_files = [f for f in retro_files if f.name != "summary.md"]
+    if not retro_dir.exists():
+        logger.warning(f"No retrospective directory for sprint {sprint_num}")
+        return
 
-    if not retro_files:
-        logger.warning(f"No retrospective files found in {retro_dir}")
-        return ""
+    member_retros = {}
+    members_map = {m["login"]: m["display"] for m in config["team"]["members"]}
+    for login, display in members_map.items():
+        f = retro_dir / f"{login}.md"
+        content = read_file(f)
+        if content:
+            member_retros[display] = content
+
+    if not member_retros:
+        logger.warning("No retrospective entries found.")
+        return
 
     retro_contents = "\n\n---\n\n".join(
-        f"### {f.stem}\n{read_file(f)}" for f in retro_files
+        f"### {name}\n{content}" for name, content in member_retros.items()
     )
 
     velocity = calculate_sprint_velocity(sprint_num, repo_name)
+    meta = read_file(root / f"sprint-{sprint_num:02d}" / "meta.md") or ""
+    sprint_goal = extract_section(meta, "Goal") or "Not specified"
 
-    prompt = RETROSPECTIVE_SYNTHESIS.format(
-        sprint_num=sprint_num,
-        sprint_goal="(see sprint meta)",
-        velocity=velocity["completed_sp"],
-        planned_sp=velocity["planned_sp"],
-        retro_contents=retro_contents,
+    summary = complete(
+        RETROSPECTIVE_SYNTHESIS.format(
+            sprint_num=sprint_num,
+            sprint_goal=sprint_goal,
+            velocity=velocity["completed_sp"],
+            planned_sp=velocity["planned_sp"],
+            retro_contents=retro_contents,
+        ),
+        system=SYSTEM_SCRUM_ASSISTANT,
     )
 
-    logger.info(f"Synthesising retrospective for sprint {sprint_num}...")
-    summary = complete(prompt, system=SYSTEM_SCRUM_ASSISTANT)
+    followthrough_note = check_previous_retro_followthrough(sprint_num, config)
 
-    if not summary:
-        summary = f"# Sprint {sprint_num} Retrospective Summary\n\n*LLM unavailable.*\n"
+    full_summary = (
+        f"<!-- BOT-GENERATED -->\n"
+        f"# Retrospective Summary — Sprint {sprint_num:02d}\n"
+        f"*Generated: {date.today().isoformat()}*\n"
+        f"*{len(member_retros)} of {len(members_map)} team members responded*\n\n"
+        + (summary or "LLM synthesis unavailable. See individual entries.")
+        + followthrough_note
+    )
 
-    if not dry_run:
-        retro_dir.mkdir(parents=True, exist_ok=True)
-        atomic_write(retro_dir / "summary.md",
-                     f"<!-- BOT-GENERATED: do not edit manually -->\n\n{summary}")
-        logger.info(f"Retrospective summary written to sprint-{sprint_num:02d}/retrospective/summary.md")
+    atomic_write(retro_dir / "summary.md", full_summary)
 
-        slack_webhook = config.get("notifications", {}).get("slack_webhook")
-        if slack_webhook:
-            post_to_slack(webhook_url=slack_webhook,
-                          text=f"*Sprint {sprint_num} Retrospective Summary*\n\n{summary[:2000]}")
+    webhook = config.get("notifications", {}).get("slack_webhook")
+    if webhook:
+        post_to_slack(webhook,
+            f"🔄 *Sprint {sprint_num:02d} Retrospective complete*\n"
+            f"{len(member_retros)} responses synthesised. "
+            f"See `sprint-{sprint_num:02d}/retrospective/summary.md`"
+        )
 
-    return summary
+    logger.info(f"Retrospective synthesised for sprint {sprint_num}")
 
 
 if __name__ == "__main__":
@@ -67,7 +126,6 @@ if __name__ == "__main__":
     parser.add_argument("--sprint", type=int, required=True)
     parser.add_argument("--repo", required=True)
     parser.add_argument("--config")
-    parser.add_argument("--dry-run", action="store_true")
     args = parser.parse_args()
     config = load_config(args.config)
-    synthesise_retrospective(args.sprint, args.repo, config, args.dry_run)
+    synthesise_retrospective(args.sprint, args.repo, config)

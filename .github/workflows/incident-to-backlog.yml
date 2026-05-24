@@ -1,0 +1,73 @@
+name: Scraut — Incident to Backlog
+on:
+  push:
+    paths:
+      - 'sprint-*/incidents/**/action-items.md'
+
+jobs:
+  create-backlog-items:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - uses: actions/setup-python@v5
+        with: { python-version: '3.11' }
+
+      - run: pip install -r requirements.txt
+
+      - name: Detect changed incident file
+        id: detect
+        run: |
+          CHANGED=$(git diff --name-only HEAD~1 HEAD | grep 'incidents/.*/action-items.md' | head -1)
+          echo "incident_file=$CHANGED" >> $GITHUB_OUTPUT
+
+      - name: Create GitHub issues from action items
+        if: steps.detect.outputs.incident_file != ''
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+        run: |
+          python - << 'EOF'
+          import sys, os
+          sys.path.insert(0, '.')
+          from pathlib import Path
+          from scripts.utils.config import load_config
+          from scripts.utils.file_utils import read_file
+          from scripts.github.api import get_github_client, create_issue, ensure_label_exists
+          from scripts.llm.client import complete_json
+          from scripts.llm.prompts import SYSTEM_SCRUM_ASSISTANT
+
+          config = load_config()
+          incident_file = Path('${{ steps.detect.outputs.incident_file }}')
+          content = read_file(incident_file)
+          incident_dir = incident_file.parent
+          timeline = read_file(incident_dir / 'timeline.md')
+          incident_name = incident_dir.name
+
+          prompt = f"""
+          Extract all action items from this incident postmortem.
+          Incident: {incident_name}
+          Timeline: {timeline[:500]}
+          Action items file:
+          {content}
+
+          Reply with ONLY JSON:
+          {{"action_items": [{{"title": "...", "description": "...", "priority": "p:high|p:medium"}}]}}
+          """
+          result = complete_json(prompt, system=SYSTEM_SCRUM_ASSISTANT)
+
+          g = get_github_client()
+          repo = g.get_repo(os.environ.get('GITHUB_REPOSITORY', ''))
+          ensure_label_exists(repo, "incident-followup", color="b60205")
+
+          for item in (result or {}).get("action_items", []):
+              issue = create_issue(
+                  repo,
+                  title=f"[Incident followup] {item['title']}",
+                  body=f"{item['description']}\n\n**Source:** {incident_name}\n**Timeline:** See `{incident_dir}/timeline.md`",
+                  labels=["task", "incident-followup", item.get("priority", "p:medium")],
+              )
+              print(f"Created #{issue.number}: {item['title']}")
+          EOF

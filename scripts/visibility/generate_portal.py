@@ -218,6 +218,29 @@ footer a:hover { text-decoration: underline; }
 """
 
 
+def generate_form_html(config: dict) -> None:
+    """
+    Generate portal/form.html with team members populated from scraut.yml.
+    This replaces the static CONFIG.teamMembers = [] with actual data.
+    """
+    root = get_repo_root()
+    form_template = read_file(root / "portal" / "form.html")
+    if not form_template:
+        return
+
+    members_js = json.dumps([
+        {"login": m["login"], "display": m["display"]}
+        for m in config["team"]["members"]
+    ])
+
+    updated = form_template.replace(
+        "teamMembers: [],    // Populated from scraut.yml via build step",
+        f"teamMembers: {members_js},",
+    )
+    atomic_write(root / "portal" / "form.html", updated)
+    logger.info("form.html populated with team members from scraut.yml")
+
+
 def generate_portal(config: dict, dry_run: bool = False) -> None:
     data = _collect_data(config)
     root = get_repo_root()
@@ -237,6 +260,7 @@ def generate_portal(config: dict, dry_run: bool = False) -> None:
     atomic_write(portal_dir / "index.html", html)
     atomic_write(portal_dir / "style.css", css)
     atomic_write(portal_dir / "data.json", data_json)
+    generate_form_html(config)
     logger.info(f"Portal generated at {portal_dir} (sprint={data['sprint_num']})")
 
 

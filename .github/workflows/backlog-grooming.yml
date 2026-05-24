@@ -1,0 +1,31 @@
+name: Scraut — Backlog Grooming
+on:
+  schedule:
+    - cron: '0 2 * * 3'  # Wednesday 9am Jakarta = 02:00 UTC (mid-sprint)
+  workflow_dispatch:
+
+jobs:
+  grooming:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with: { python-version: '3.11' }
+
+      - run: pip install -r requirements.txt
+
+      - name: Prioritise unlabelled backlog items
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+          SLACK_WEBHOOK: ${{ secrets.SLACK_WEBHOOK }}
+        run: |
+          python scripts/backlog/prioritize_backlog.py --repo ${{ github.repository }}
+
+      - name: Check for scope creep
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          SLACK_WEBHOOK: ${{ secrets.SLACK_WEBHOOK }}
+        run: |
+          python scripts/sprint/check_scope_creep.py --repo ${{ github.repository }}
