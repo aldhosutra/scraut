@@ -2,19 +2,19 @@
 /**
  * create-scraut — interactive setup wizard for Scraut
  *
- * Usage (from the cloned Scraut repo root):
- *   node apps/create-scraut/bin/create-scraut.js
- *
- * Or, after publishing to npm:
- *   npx create-scraut
+ * Usage:
+ *   npx create-scraut              — set up in the current directory
+ *   npx create-scraut my-team      — clone into ./my-team/ and set up
+ *   node apps/create-scraut/bin/create-scraut.js   — same, from within a clone
  *
  * What it does:
- *   1. Asks questions about your team and preferences
- *   2. Writes workspace/scraut.yml
- *   3. Creates the workspace/ and .scraut/ directory skeletons
- *   4. Scaffolds template files so team members know the expected format
- *   5. Creates GitHub labels (if GITHUB_TOKEN env var is set)
- *   6. Prints the secrets checklist and next steps
+ *   1. Clones the Scraut repo (if not already inside one)
+ *   2. Asks questions about your team and preferences
+ *   3. Writes workspace/scraut.yml
+ *   4. Creates the workspace/ and .scraut/ directory skeletons
+ *   5. Scaffolds template files so team members see the expected format
+ *   6. Creates GitHub labels (if GITHUB_TOKEN env var is set)
+ *   7. Prints the secrets checklist and next steps
  */
 
 import inquirer from 'inquirer';
@@ -24,6 +24,11 @@ import chalk from 'chalk';
 import ora from 'ora';
 import fs from 'fs';
 import path from 'path';
+import { execSync } from 'child_process';
+import { fileURLToPath } from 'url';
+
+const SCRAUT_REPO = 'https://github.com/aldhosutra/scraut.git';
+const SENTINEL_FILE = '.github/workflows/daily-standup.yml';
 
 // ---------------------------------------------------------------------------
 // GitHub label definitions — kept in sync with create_labels.py
@@ -177,13 +182,6 @@ const OKR_TEMPLATE = `# Objectives & Key Results
 ### Key Result 1.2
 - Target: [Measurable outcome]
 - Current: [Current value]
-
-## Objective 2
-[Describe what you want to achieve]
-
-### Key Result 2.1
-- Target: [Measurable outcome]
-- Current: [Current value]
 `;
 
 function customerFeedbackTemplate(today) {
@@ -245,8 +243,17 @@ function writeIfMissing(filePath, content) {
   }
 }
 
-function today() {
+function todayStr() {
   return new Date().toISOString().split('T')[0];
+}
+
+function isInsideScrautRepo(dir) {
+  return fs.existsSync(path.join(dir, SENTINEL_FILE));
+}
+
+function hasGit() {
+  try { execSync('git --version', { stdio: 'ignore' }); return true; }
+  catch { return false; }
 }
 
 // ---------------------------------------------------------------------------
@@ -254,14 +261,81 @@ function today() {
 // ---------------------------------------------------------------------------
 async function main() {
   console.log(chalk.bold('\n  Scraut Setup Wizard\n'));
-  console.log(chalk.dim('  Answers populate workspace/scraut.yml.\n'));
 
+  // ── Step 1: Resolve target directory ──────────────────────────────────────
+  const argDir = process.argv[2];
+  let targetDir = process.cwd();
+  let cloned = false;
+
+  if (argDir) {
+    // User passed a directory name: npx create-scraut my-team
+    targetDir = path.resolve(process.cwd(), argDir);
+    if (fs.existsSync(targetDir)) {
+      console.log(chalk.yellow(`  Directory "${argDir}" already exists — using it as-is.\n`));
+    } else {
+      if (!hasGit()) {
+        console.error(chalk.red('  Error: git is required to clone the Scraut repository.'));
+        console.error(chalk.dim('  Install git from https://git-scm.com and try again.'));
+        process.exit(1);
+      }
+      const spinner = ora(`Cloning Scraut into ${argDir}...`).start();
+      try {
+        execSync(`git clone --depth 1 ${SCRAUT_REPO} "${targetDir}"`, { stdio: 'pipe' });
+        spinner.succeed(`Cloned Scraut into ${argDir}/`);
+        cloned = true;
+      } catch (e) {
+        spinner.fail('Clone failed');
+        console.error(chalk.red(`  ${e.message}`));
+        process.exit(1);
+      }
+    }
+  } else if (!isInsideScrautRepo(targetDir)) {
+    // Not in a Scraut repo and no directory given — clone into current dir
+    if (!hasGit()) {
+      console.error(chalk.red('  Error: git is required to clone the Scraut repository.'));
+      console.error(chalk.dim('  Install git from https://git-scm.com and try again.'));
+      process.exit(1);
+    }
+    const cwd = path.basename(targetDir);
+    const isEmpty = fs.readdirSync(targetDir).length === 0;
+
+    if (isEmpty) {
+      console.log(chalk.dim('  Current directory is empty — cloning Scraut here.\n'));
+      const spinner = ora('Cloning Scraut...').start();
+      try {
+        execSync(`git clone --depth 1 ${SCRAUT_REPO} .`, { cwd: targetDir, stdio: 'pipe' });
+        spinner.succeed('Scraut cloned into current directory');
+        cloned = true;
+      } catch (e) {
+        spinner.fail('Clone failed');
+        console.error(chalk.red(`  ${e.message}`));
+        process.exit(1);
+      }
+    } else {
+      console.log(chalk.yellow('  Not inside a Scraut repository.\n'));
+      console.log('  Run one of:');
+      console.log(chalk.cyan('    npx create-scraut my-team-name') + chalk.dim('  — creates ./my-team-name/ with Scraut'));
+      console.log(chalk.cyan('    mkdir my-team && cd my-team && npx create-scraut') + chalk.dim('  — set up in an empty directory'));
+      console.log('');
+      process.exit(1);
+    }
+  }
+
+  // Change into target directory for all subsequent operations
+  process.chdir(targetDir);
+  const repoRoot = process.cwd();
+
+  if (!cloned) {
+    console.log(chalk.dim('  Answers populate workspace/scraut.yml.\n'));
+  }
+
+  // ── Step 2: Interactive prompts ──────────────────────────────────────────
   const answers = await inquirer.prompt([
     {
       type: 'input',
       name: 'repo',
       message: 'GitHub repository (org/repo):',
-      validate: (v) => v.includes('/') || 'Must be org/repo format',
+      validate: (v) => v.trim().includes('/') || 'Must be org/repo format (e.g. myorg/my-repo)',
     },
     {
       type: 'input',
@@ -273,11 +347,13 @@ async function main() {
       type: 'input',
       name: 'product_owner',
       message: 'Product owner login:',
+      validate: (v) => v.trim().length > 0 || 'Required',
     },
     {
       type: 'input',
       name: 'scrum_master',
       message: 'Scrum master login:',
+      validate: (v) => v.trim().length > 0 || 'Required',
     },
     {
       type: 'input',
@@ -326,6 +402,7 @@ async function main() {
     email: '',
   }));
 
+  // ── Step 3: Build config ─────────────────────────────────────────────────
   const config = {
     sprint: {
       length_days: answers.sprint_length,
@@ -377,117 +454,119 @@ async function main() {
     paths: { workspace: 'workspace', scraut: '.scraut', portal: 'apps/portal' },
   };
 
-  // Write workspace/scraut.yml
+  // ── Step 4: Write workspace/scraut.yml ───────────────────────────────────
   const spinner = ora('Writing workspace/scraut.yml...').start();
   fs.mkdirSync('workspace', { recursive: true });
   fs.writeFileSync('workspace/scraut.yml', yaml.dump(config, { lineWidth: 120, sortKeys: false }));
   spinner.succeed('workspace/scraut.yml written');
 
-  // Create workspace directory skeleton
-  spinner.start('Creating workspace/ directory structure...');
+  // ── Step 5: Create directory skeleton ────────────────────────────────────
+  spinner.start('Creating directory structure...');
   const workspaceDirs = [
-    'workspace/team',
-    'workspace/okr',
-    'workspace/customer',
-    'workspace/knowledge',
-    'workspace/milestones',
-    'workspace/sprint/01/standup',
-    'workspace/sprint/01/retrospective',
-    'workspace/sprint/01/grooming',
-    'workspace/sprint/01/decisions',
-    'workspace/sprint/01/adr',
+    'workspace/team', 'workspace/okr', 'workspace/customer',
+    'workspace/knowledge', 'workspace/milestones',
+    'workspace/sprint/01/standup', 'workspace/sprint/01/retrospective',
+    'workspace/sprint/01/grooming', 'workspace/sprint/01/decisions', 'workspace/sprint/01/adr',
   ];
   const scrautDirs = [
-    '.scraut/sprint/01/standup/summary',
-    '.scraut/sprint/01/review',
-    '.scraut/sprint/01/code',
-    '.scraut/sprint/01/incidents',
-    '.scraut/insights',
-    '.scraut/milestones',
-    '.scraut/suggestions/active',
-    '.scraut/suggestions/implemented',
-    '.scraut/suggestions/resolved',
+    '.scraut/sprint/01/standup/summary', '.scraut/sprint/01/review',
+    '.scraut/sprint/01/code', '.scraut/sprint/01/incidents',
+    '.scraut/insights', '.scraut/milestones',
+    '.scraut/suggestions/active', '.scraut/suggestions/implemented', '.scraut/suggestions/resolved',
   ];
-  for (const d of workspaceDirs) {
-    fs.mkdirSync(d, { recursive: true });
-  }
+  for (const d of workspaceDirs) fs.mkdirSync(d, { recursive: true });
   for (const d of scrautDirs) {
     fs.mkdirSync(d, { recursive: true });
     fs.writeFileSync(path.join(d, '.gitkeep'), '');
   }
-  spinner.succeed('workspace/ and .scraut/ directory structure created');
+  spinner.succeed('workspace/ and .scraut/ structure created');
 
-  // Scaffold template files
+  // ── Step 6: Scaffold template files ─────────────────────────────────────
   spinner.start('Scaffolding workspace template files...');
-  const todayStr = today();
+  const today = todayStr();
   const teamNames = members.map(m => m.display).join(', ');
 
   for (const member of members) {
-    const standupDir = `workspace/sprint/01/standup/${todayStr}`;
-    writeIfMissing(
-      `${standupDir}/${member.login}.md`,
-      standupTemplate(member.display, member.login, 1, todayStr),
-    );
-    writeIfMissing(
-      `workspace/sprint/01/retrospective/${member.login}.md`,
-      retroTemplate(member.display, 1),
-    );
+    const standupDir = `workspace/sprint/01/standup/${today}`;
+    writeIfMissing(`${standupDir}/${member.login}.md`,
+      standupTemplate(member.display, member.login, 1, today));
+    writeIfMissing(`workspace/sprint/01/retrospective/${member.login}.md`,
+      retroTemplate(member.display, 1));
   }
-
   writeIfMissing('workspace/sprint/01/meta.md', metaTemplate(teamNames));
-  writeIfMissing(
-    'workspace/sprint/01/grooming/backlog-ideas.md',
-    '# Backlog Ideas\n<!-- Append new ideas below. Anyone can add. -->\n\n',
-  );
+  writeIfMissing('workspace/sprint/01/grooming/backlog-ideas.md',
+    '# Backlog Ideas\n<!-- Append new ideas below. Anyone can add. -->\n\n');
   writeIfMissing('workspace/team/capacity.md', capacityTemplate(members));
   writeIfMissing('workspace/okr/okr.md', OKR_TEMPLATE);
-  writeIfMissing('workspace/customer/feedback.md', customerFeedbackTemplate(todayStr));
+  writeIfMissing('workspace/customer/feedback.md', customerFeedbackTemplate(today));
   writeIfMissing('workspace/milestones/README.md', milestonesReadmeTemplate(answers.repo));
-
   spinner.succeed('Workspace template files scaffolded');
 
-  // Create GitHub labels (if GITHUB_TOKEN is available)
+  // ── Step 7: GitHub labels ────────────────────────────────────────────────
   const token = process.env.GITHUB_TOKEN;
   if (token && answers.repo !== 'your-org/your-repo') {
     spinner.start(`Creating ${LABELS.length} GitHub labels in ${answers.repo}...`);
     const octokit = new Octokit({ auth: token });
     const [owner, repo] = answers.repo.split('/');
-    let created = 0;
-    let skipped = 0;
+    let created = 0, skipped = 0;
     for (const label of LABELS) {
       try {
         await octokit.rest.issues.createLabel({ owner, repo, ...label });
         created++;
       } catch (e) {
         if (e.status === 422) { skipped++; }
-        else { console.error(`  Warning: could not create label "${label.name}": ${e.message}`); }
+        else { console.error(chalk.yellow(`  Warning: could not create label "${label.name}": ${e.message}`)); }
       }
     }
     spinner.succeed(`GitHub labels: ${created} created, ${skipped} already existed`);
   } else {
-    console.log(chalk.yellow('\n  Skipping label creation (GITHUB_TOKEN not set)'));
-    console.log(chalk.dim('  Run later: python apps/automation/scraut/platform/setup/create_labels.py --repo ' + answers.repo));
+    const reason = !token ? 'GITHUB_TOKEN not set' : 'placeholder repo — skipping';
+    console.log(chalk.yellow(`\n  Skipping label creation (${reason})`));
+    if (token) {
+      console.log(chalk.dim('  Run later: python apps/automation/scraut/platform/setup/create_labels.py --repo ' + answers.repo));
+    } else {
+      console.log(chalk.dim('  Set GITHUB_TOKEN and re-run, or create labels later:'));
+      console.log(chalk.dim('  python apps/automation/scraut/platform/setup/create_labels.py --repo ' + answers.repo));
+    }
   }
 
-  // Print checklist
+  // ── Step 8: Next steps ───────────────────────────────────────────────────
+  const dirNote = argDir ? ` ${argDir}/` : '';
   const llmKey = LLM_KEY_NAME[answers.llm_provider];
+
   console.log('\n' + chalk.bold('  Done! Next steps:\n'));
-  console.log('  1. ' + chalk.cyan('Edit workspace/scraut.yml'));
-  console.log(chalk.dim('       Fill in slack_id and email for each team member.\n'));
-  console.log('  2. ' + chalk.cyan(`Fill in today's standup`));
-  console.log(chalk.dim(`       workspace/sprint/01/standup/${todayStr}/<login>.md\n`));
+
+  if (cloned) {
+    console.log(`  ${chalk.dim('Enter your project directory:')}`);
+    console.log(`    cd ${argDir || '.'}\n`);
+  }
+
+  console.log('  1. ' + chalk.cyan('Fill in team details in workspace/scraut.yml'));
+  console.log(chalk.dim('       Add slack_id and email for each team member.\n'));
+
+  console.log(`  2. ` + chalk.cyan("Fill in today's standup"));
+  console.log(chalk.dim(`       workspace/sprint/01/standup/${today}/<login>.md\n`));
+
   console.log('  3. ' + chalk.cyan('Set GitHub Secrets') + chalk.dim('  (Settings → Secrets → Actions)'));
   console.log(`     [ ] ${llmKey}`);
   console.log('     [ ] SLACK_WEBHOOK');
   console.log('     [ ] SLACK_BOT_TOKEN\n');
+
   console.log('  4. ' + chalk.cyan('Install the scraut CLI'));
   console.log(chalk.dim('       pip install -r apps/automation/requirements.txt\n'));
-  console.log('  5. ' + chalk.cyan('Create Sprint 1'));
-  console.log(chalk.dim(`       python apps/automation/scraut/scrum/sprint/create_sprint.py --sprint 1 --repo ${answers.repo}\n`));
-  console.log('  6. ' + chalk.cyan('Commit and push'));
+
+  console.log('  5. ' + chalk.cyan('Enable GitHub Actions') + chalk.dim('  (Settings → Actions → General)'));
+  console.log(chalk.dim('       Allow all actions + Read and write permissions\n'));
+
+  console.log('  6. ' + chalk.cyan('Enable GitHub Pages') + chalk.dim('  (Settings → Pages → Branch: main, Folder: /docs)\n'));
+
+  console.log('  7. ' + chalk.cyan('Commit and push'));
   console.log(chalk.dim("       git add . && git commit -m 'chore: scraut setup [skip ci]' && git push\n"));
-  console.log('  7. ' + chalk.cyan('Trigger sprint-planning') + chalk.dim(' from GitHub Actions UI'));
+
+  console.log('  8. ' + chalk.cyan('Trigger sprint-planning') + chalk.dim(' from the GitHub Actions UI'));
+  console.log('');
+  console.log(chalk.dim('  Full docs: https://aldhosutra.github.io/scraut/'));
   console.log('');
 }
 
-main().catch((e) => { console.error(e); process.exit(1); });
+main().catch((e) => { console.error(chalk.red('\n  Error: ' + e.message)); process.exit(1); });

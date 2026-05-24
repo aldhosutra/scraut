@@ -35,10 +35,11 @@ Every ceremony — planning, grooming, review, retro, estimation — follows the
 ### Option A — npm wizard (recommended)
 
 ```bash
-git clone https://github.com/aldhosutra/scraut.git my-team
+npx create-scraut my-team
 cd my-team
-node apps/create-scraut/bin/create-scraut.js
 ```
+
+The wizard clones Scraut, asks 9 questions, and writes all config and workspace templates in one step.
 
 ### Option B — Python CLI
 

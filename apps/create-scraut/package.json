@@ -1,6 +1,6 @@
 {
   "name": "create-scraut",
-  "version": "0.0.1",
+  "version": "0.1.0",
   "description": "Set up Scraut — Scrum Automation — in 5 minutes",
   "bin": {
     "create-scraut": "./bin/create-scraut.js"
