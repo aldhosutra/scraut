@@ -4,10 +4,13 @@ The `scraut` CLI tool. Install with: pip install scraut
 Provides developer-friendly commands for daily Scraut interactions.
 """
 import os
+import re
 import click
 import webbrowser
 from datetime import date
 from pathlib import Path
+from scraut.platform.utils.file_utils import format_sprint_num
+from scraut.platform.utils.config import get_folder_padding, get_config_path
 
 
 @click.group()
@@ -55,7 +58,7 @@ def standup(browser):
 
         repo_name = repo_match.group(1)
         branch = "main"
-        file_path = f"workspace/sprint/{sprint_num:02d}/standup/{today}/{login}.md"
+        file_path = f"workspace/sprint/{format_sprint_num(sprint_num, get_folder_padding())}/standup/{today}/{login}.md"
         url = (f"https://github.com/{repo_name}/edit/{branch}/{file_path}"
                f"?message=standup%3A+{today}+%5Bskip+ci%5D")
 
@@ -86,7 +89,7 @@ def status():
         sprint_num = get_current_sprint()
 
         click.echo(f"\n{'='*50}")
-        click.echo(f"Sprint {sprint_num:02d} Status")
+        click.echo(f"Sprint {format_sprint_num(sprint_num, get_folder_padding())} Status")
         click.echo(f"{'='*50}")
 
         meta = read_file(get_sprint_folder(sprint_num) / "meta.md")
@@ -201,7 +204,7 @@ def velocity(sprint):
         vel = calculate_sprint_velocity(sprint_num, repo_name)
         rolling = calculate_rolling_velocity(repo_name)
 
-        click.echo(f"\nSprint {sprint_num:02d}: {vel['completed_sp']} / {vel['planned_sp']} sp "
+        click.echo(f"\nSprint {format_sprint_num(sprint_num, get_folder_padding())}: {vel['completed_sp']} / {vel['planned_sp']} sp "
                    f"({round(vel['completion_rate']*100)}%)")
         click.echo(f"Rolling average: {rolling['avg']} sp/sprint "
                    f"(σ={rolling['std_dev']}, {rolling['sprints_sampled']} sprints sampled)")
@@ -214,16 +217,16 @@ def velocity(sprint):
 _STANDUP_TEMPLATE = """\
 # Standup — {display_name}
 <!--
-  Sprint: sprint-{sprint_num:02d}
+  Sprint: sprint-{sprint_num}
   Date: {date}
   Author: {login}
 
   ─── NAVIGATION ──────────────────────────────────────────
-  📁 Sprint folder:   sprint-{sprint_num:02d}/
-  📋 Sprint meta:     sprint-{sprint_num:02d}/meta.md
-  📝 Your standup:    sprint-{sprint_num:02d}/standup/{date}/{login}.md
-  💬 Retro (when due): sprint-{sprint_num:02d}/retrospective/{login}.md
-  🗒️  Backlog ideas:   sprint-{sprint_num:02d}/grooming/backlog-ideas.md
+  📁 Sprint folder:   sprint-{sprint_num}/
+  📋 Sprint meta:     sprint-{sprint_num}/meta.md
+  📝 Your standup:    sprint-{sprint_num}/standup/{date}/{login}.md
+  💬 Retro (when due): sprint-{sprint_num}/retrospective/{login}.md
+  🗒️  Backlog ideas:   sprint-{sprint_num}/grooming/backlog-ideas.md
   🏁 Board:           [GitHub Projects - see scraut.yml portal.project_number]
   ─────────────────────────────────────────────────────────
 -->
@@ -244,7 +247,7 @@ None
 """
 
 _RETRO_TEMPLATE = """\
-# Retro — {display_name} — Sprint {sprint_num:02d}
+# Retro — {display_name} — Sprint {sprint_num}
 
 ## Went well
 <!-- What went well this sprint? Be specific. -->
@@ -380,6 +383,15 @@ def init():
     channel = click.prompt("Slack channel", default="#scraut-bot")
     sprint_days = click.prompt("Sprint length in days", default=14, type=int)
     starting_sprint = click.prompt("Starting sprint number (1 if brand-new team)", default=1, type=int)
+    _min_padding = len(str(starting_sprint))
+    _default_padding = max(3, _min_padding)
+    folder_padding = click.prompt(
+        f"Sprint folder padding digits (e.g. 3 → sprint/001/, 4 → sprint/0001/)",
+        default=_default_padding, type=int,
+    )
+    while folder_padding < _min_padding:
+        click.echo(f"  Padding must be at least {_min_padding} to fit sprint {starting_sprint}.")
+        folder_padding = click.prompt("Sprint folder padding digits", default=_default_padding, type=int)
     timezone = click.prompt("Timezone (IANA format, e.g. UTC, Asia/Jakarta)", default="UTC")
     provider = click.prompt(
         "LLM provider",
@@ -416,6 +428,7 @@ def init():
             "timezone": timezone,
             "capacity_buffer": 0.85,
             "current_sprint": starting_sprint,
+            "folder_padding": folder_padding,
         },
         "team": {
             "members": members,
@@ -454,6 +467,8 @@ def init():
             "title": f"{repo.split('/')[0]} Dashboard",
             "public": True,
             "refresh_minutes": 30,
+            "sync_board": True,
+            "project_number": None,
         },
         "suggestions": {"enabled": True, "min_evidence_count": 3, "measurement_sprints": 2},
         "paths": {"workspace": "workspace", "scraut": ".scraut", "portal": "apps/portal"},
@@ -467,7 +482,7 @@ def init():
         yaml.dump(config, f, default_flow_style=False, sort_keys=False, allow_unicode=True)
     click.echo(f"\n  created  workspace/scraut.yml")
 
-    nn = f"{starting_sprint:02d}"
+    nn = format_sprint_num(starting_sprint, get_folder_padding())
 
     # Workspace directories
     for d in [
@@ -508,14 +523,14 @@ def init():
         standup_file = standup_dir / f"{login}.md"
         if not standup_file.exists():
             standup_file.write_text(_STANDUP_TEMPLATE.format(
-                display_name=display, sprint_num=starting_sprint, date=today, login=login,
+                display_name=display, sprint_num=nn, date=today, login=login,
             ))
 
         retro_dir = workspace / "sprint" / nn / "retrospective"
         retro_file = retro_dir / f"{login}.md"
         if not retro_file.exists():
             retro_file.write_text(_RETRO_TEMPLATE.format(
-                display_name=display, sprint_num=starting_sprint,
+                display_name=display, sprint_num=nn,
             ))
 
     meta_file = workspace / "sprint" / nn / "meta.md"
@@ -660,14 +675,14 @@ def sync(dry_run):
         f"## Issues in sprint\n"
         f"| Issue | Title | Epic | SP | Assignee |\n"
         f"|-------|-------|------|----|----------|\n",
-        f"sprint/{sprint_num:02d}/meta.md",
+        f"sprint/{format_sprint_num(sprint_num, get_folder_padding())}/meta.md",
     )
 
     # ── grooming/backlog-ideas.md ─────────────────────────────────────────────
     _ensure(
         sprint_folder / "grooming" / "backlog-ideas.md",
         "# Backlog Ideas\n<!-- Append new ideas below. Anyone can add. -->\n\n",
-        f"sprint/{sprint_num:02d}/grooming/backlog-ideas.md",
+        f"sprint/{format_sprint_num(sprint_num, get_folder_padding())}/grooming/backlog-ideas.md",
     )
 
     # ── Per-member: today's standup + retro ──────────────────────────────────
@@ -678,14 +693,14 @@ def sync(dry_run):
         _ensure(
             sprint_folder / "standup" / today / f"{login}.md",
             _STANDUP_TEMPLATE.format(
-                display_name=display, sprint_num=sprint_num, date=today, login=login,
+                display_name=display, sprint_num=format_sprint_num(sprint_num, get_folder_padding()), date=today, login=login,
             ),
             f"standup/{today}/{login}.md",
         )
 
         _ensure(
             sprint_folder / "retrospective" / f"{login}.md",
-            _RETRO_TEMPLATE.format(display_name=display, sprint_num=sprint_num),
+            _RETRO_TEMPLATE.format(display_name=display, sprint_num=format_sprint_num(sprint_num, get_folder_padding())),
             f"retrospective/{login}.md",
         )
 
@@ -695,20 +710,24 @@ def sync(dry_run):
     elif created:
         click.echo(f"\n  {len(created)} item(s) created, {len(skipped)} already existed")
         click.echo("  Commit the new files:")
-        click.echo(f"    git add workspace/ .scraut/ && git commit -m 'chore: sync sprint {sprint_num:02d} [skip ci]' && git push")
+        click.echo(f"    git add workspace/ .scraut/ && git commit -m 'chore: sync sprint {format_sprint_num(sprint_num, get_folder_padding())} [skip ci]' && git push")
     else:
-        click.echo(f"\n  Already in sync — sprint {sprint_num:02d} workspace is complete for {today}")
+        click.echo(f"\n  Already in sync — sprint {format_sprint_num(sprint_num, get_folder_padding())} workspace is complete for {today}")
 
 
 @cli.command()
 @click.argument("subcommand", required=False)
+@click.argument("subarg", required=False)
+@click.option("--dry-run", is_flag=True, help="Print what would change without making any writes")
 @click.pass_context
-def sprint(ctx, subcommand):
+def sprint(ctx, subcommand, subarg, dry_run):
     """Sprint management shortcuts.
 
     \b
-    scraut sprint status    — show current sprint number and dates
-    scraut sprint scaffold  — same as 'scraut sync' (alias)
+    scraut sprint status              — show current sprint number and dates
+    scraut sprint scaffold            — same as 'scraut sync' (alias)
+    scraut sprint repad <N>           — widen sprint folder padding to N digits
+    scraut sprint repad <N> --dry-run — preview what repad would rename
     """
     if subcommand in (None, "status"):
         try:
@@ -719,9 +738,10 @@ def sprint(ctx, subcommand):
             sprint_num = get_current_sprint()
             start, end = get_sprint_dates(sprint_num, config)
 
-            click.echo(f"\n  Current sprint: {sprint_num:02d}")
+            click.echo(f"\n  Current sprint: {format_sprint_num(sprint_num, get_folder_padding())}")
             click.echo(f"  Period:         {start} → {end}")
-            click.echo(f"  Folder:         workspace/sprint/{sprint_num:02d}/")
+            click.echo(f"  Folder:         workspace/sprint/{format_sprint_num(sprint_num, get_folder_padding())}/")
+            click.echo(f"  Padding:        {get_folder_padding()} digits")
             click.echo(f"  Today:          {date.today().isoformat()}")
             click.echo("")
 
@@ -731,9 +751,144 @@ def sprint(ctx, subcommand):
     elif subcommand == "scaffold":
         ctx.invoke(sync)
 
+    elif subcommand == "repad":
+        _sprint_repad(subarg, dry_run)
+
     else:
         click.echo(f"Unknown subcommand: {subcommand}")
-        click.echo("Usage: scraut sprint [status|scaffold]")
+        click.echo("Usage: scraut sprint [status|scaffold|repad]")
+
+
+def _sprint_repad(subarg: str, dry_run: bool) -> None:
+    """Widen sprint folder padding width and rename all existing sprint dirs."""
+    try:
+        import yaml
+        from scraut.platform.utils.config import (
+            load_config, get_current_sprint, get_folder_padding,
+            get_config_path, get_workspace_root, get_scraut_root,
+        )
+
+        if not subarg:
+            click.echo("Usage: scraut sprint repad <new_padding>")
+            click.echo("Example: scraut sprint repad 4")
+            return
+
+        try:
+            new_padding = int(subarg)
+        except ValueError:
+            click.echo(f"Error: new_padding must be a positive integer, got: {subarg!r}", err=True)
+            return
+
+        if new_padding < 1:
+            click.echo("Error: padding must be at least 1", err=True)
+            return
+
+        config = load_config()
+        current_padding = get_folder_padding()
+        current_sprint = get_current_sprint()
+
+        if new_padding <= current_padding:
+            click.echo(
+                f"Error: new padding ({new_padding}) must be greater than current "
+                f"padding ({current_padding}). Reducing padding breaks folder sort order.",
+                err=True,
+            )
+            return
+
+        min_needed = len(str(current_sprint))
+        if new_padding < min_needed:
+            click.echo(
+                f"Error: padding {new_padding} is too small for sprint {current_sprint} "
+                f"(needs at least {min_needed} digits).",
+                err=True,
+            )
+            return
+
+        workspace = get_workspace_root()
+        scraut_root = get_scraut_root()
+
+        def find_sprint_dirs(root: Path) -> list[Path]:
+            sprint_root = root / "sprint"
+            if not sprint_root.exists():
+                return []
+            return sorted(
+                [d for d in sprint_root.iterdir() if d.is_dir() and re.match(r"^\d+$", d.name)],
+                key=lambda d: int(d.name),
+            )
+
+        all_dirs = find_sprint_dirs(workspace) + find_sprint_dirs(scraut_root)
+
+        if not all_dirs:
+            click.echo("No sprint directories found to rename.")
+            return
+
+        click.echo(f"\nRepadding sprint folders: {current_padding} → {new_padding} digits")
+        click.echo(f"Directories found: {len(all_dirs)}\n")
+
+        renamed = []
+        for d in all_dirs:
+            sprint_n = int(d.name)
+            new_name = format_sprint_num(sprint_n, new_padding)
+            new_path = d.parent / new_name
+
+            if d.name == new_name:
+                click.echo(f"  skip     {d}  (already {new_name})")
+                continue
+
+            if dry_run:
+                click.echo(f"  [dry-run] {d} → {new_path}")
+            else:
+                if new_path.exists():
+                    click.echo(f"  ERROR: target already exists: {new_path}", err=True)
+                    continue
+                d.rename(new_path)
+                renamed.append(f"{d.name} → {new_name}")
+                click.echo(f"  renamed  {d} → {new_path}")
+
+        if dry_run:
+            click.echo(f"\ndry-run complete — no files were changed")
+            return
+
+        if not renamed:
+            click.echo("\nAll folders already use the requested padding.")
+            return
+
+        # Update folder_padding in scraut.yml
+        config_file = get_config_path()
+        cfg_text = config_file.read_text()
+        if "folder_padding:" in cfg_text:
+            cfg_text = re.sub(r"(folder_padding:\s*)\d+", rf"\g<1>{new_padding}", cfg_text)
+        else:
+            cfg_text = re.sub(
+                r"(current_sprint:\s*\d+)",
+                rf"\g<1>\n  folder_padding: {new_padding}",
+                cfg_text,
+            )
+        config_file.write_text(cfg_text)
+
+        old_label = format_sprint_num(current_sprint, current_padding)
+        new_label = format_sprint_num(current_sprint, new_padding)
+        try:
+            rel_cfg = config_file.relative_to(Path.cwd())
+        except ValueError:
+            rel_cfg = config_file
+
+        click.echo(f"\n  updated  {rel_cfg}  (folder_padding: {new_padding})")
+        click.echo(f"  renamed  {len(renamed)} folder(s)")
+
+        click.echo(f"""
+  GitHub labels still use the old format (e.g. sprint-{old_label}).
+  Rename each label in GitHub Settings → Labels, or via gh CLI:
+    gh label edit sprint-{old_label} --name sprint-{new_label}
+
+  Commit the renamed folders:
+    git add workspace/ .scraut/ {rel_cfg}
+    git commit -m "chore: repad sprint folders to {new_padding} digits [skip ci]"
+    git push
+""")
+
+    except Exception as e:
+        click.echo(f"Error: {e}", err=True)
 
 
 def main():
