@@ -7,6 +7,11 @@ on:
       date:
         description: 'Date (YYYY-MM-DD, default: today)'
         required: false
+      dry_run:
+        description: 'Skip all writes and API calls (safe for local act testing)'
+        required: false
+        default: 'false'
+        type: boolean
 
 jobs:
   standup-summary:
@@ -27,24 +32,27 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
           SLACK_WEBHOOK: ${{ secrets.SLACK_WEBHOOK }}
+          DRY_RUN_FLAG: ${{ github.event.inputs.dry_run == 'true' && '--dry-run' || '' }}
         run: |
           DATE="${{ github.event.inputs.date }}"
           if [ -z "$DATE" ]; then DATE=$(date +%Y-%m-%d); fi
-          python apps/automation/scraut/scrum/standup/generate_summary.py --date "$DATE"
+          python apps/automation/scraut/scrum/standup/generate_summary.py --date "$DATE" $DRY_RUN_FLAG
 
       - name: Standup coach (private DMs for vague Today sections)
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
           SLACK_BOT_TOKEN: ${{ secrets.SLACK_BOT_TOKEN }}
+          DRY_RUN_FLAG: ${{ github.event.inputs.dry_run == 'true' && '--dry-run' || '' }}
         run: |
           DATE="${{ github.event.inputs.date }}"
           if [ -z "$DATE" ]; then DATE=$(date +%Y-%m-%d); fi
           REPO="${{ github.repository }}"
           python apps/automation/scraut/scrum/standup/coach.py \
-            --date "$DATE" --repo "$REPO" --config workspace/scraut.yml
+            --date "$DATE" --repo "$REPO" --config workspace/scraut.yml $DRY_RUN_FLAG
 
       - name: Commit summary
+        if: ${{ github.event.inputs.dry_run != 'true' }}
         run: |
           git config user.email "scraut-bot@noreply.github.com"
           git config user.name "Scraut Bot"

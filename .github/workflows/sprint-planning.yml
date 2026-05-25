@@ -8,6 +8,11 @@ on:
       repo:
         description: 'org/repo'
         required: true
+      dry_run:
+        description: 'Skip all writes and API calls (safe for local act testing)'
+        required: false
+        default: 'false'
+        type: boolean
 
 jobs:
   create-planning-pr:
@@ -28,10 +33,13 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
           SLACK_WEBHOOK: ${{ secrets.SLACK_WEBHOOK }}
+          DRY_RUN_FLAG: ${{ github.event.inputs.dry_run == 'true' && '--dry-run' || '' }}
         run: |
           python apps/automation/scraut/scrum/sprint/create_sprint.py \
             --sprint ${{ github.event.inputs.sprint_num }} \
-            --repo ${{ github.event.inputs.repo }}
+            --repo ${{ github.event.inputs.repo }} \
+            $DRY_RUN_FLAG
           python apps/automation/scraut/scrum/sprint/create_planning_pr.py \
             --sprint ${{ github.event.inputs.sprint_num }} \
-            --repo ${{ github.event.inputs.repo }}
+            --repo ${{ github.event.inputs.repo }} \
+            $DRY_RUN_FLAG

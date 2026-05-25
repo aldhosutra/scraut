@@ -3,6 +3,12 @@ on:
   schedule:
     - cron: '0 2 * * 3'  # Wednesday 9am Jakarta = 02:00 UTC (mid-sprint)
   workflow_dispatch:
+    inputs:
+      dry_run:
+        description: 'Skip all writes and API calls (safe for local act testing)'
+        required: false
+        default: 'false'
+        type: boolean
 
 jobs:
   grooming:
@@ -23,12 +29,16 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
           SLACK_WEBHOOK: ${{ secrets.SLACK_WEBHOOK }}
+          DRY_RUN_FLAG: ${{ github.event.inputs.dry_run == 'true' && '--dry-run' || '' }}
         run: |
-          python apps/automation/scraut/scrum/backlog/prioritize_backlog.py --repo ${{ github.repository }}
+          python apps/automation/scraut/scrum/backlog/prioritize_backlog.py \
+            --repo ${{ github.repository }} $DRY_RUN_FLAG
 
       - name: Check for scope creep
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           SLACK_WEBHOOK: ${{ secrets.SLACK_WEBHOOK }}
+          DRY_RUN_FLAG: ${{ github.event.inputs.dry_run == 'true' && '--dry-run' || '' }}
         run: |
-          python apps/automation/scraut/scrum/sprint/check_scope_creep.py --repo ${{ github.repository }}
+          python apps/automation/scraut/scrum/sprint/check_scope_creep.py \
+            --repo ${{ github.repository }} $DRY_RUN_FLAG

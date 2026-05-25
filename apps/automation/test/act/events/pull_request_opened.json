@@ -1,0 +1,21 @@
+{
+  "action": "opened",
+  "pull_request": {
+    "number": 42,
+    "title": "feat: add rate limiting to API gateway",
+    "body": "Closes #15\n\n## Changes\n- Added token-bucket rate limiter middleware\n- 100 req/min per API key by default, configurable via env var\n- Returns 429 with Retry-After header when limit exceeded\n\n## Testing\n- Unit tests added for rate limiter logic\n- Manual test: 150 requests in 60s — 100 succeed, 50 return 429",
+    "head": { "ref": "feat/rate-limiting", "sha": "abc123" },
+    "base": { "ref": "main", "sha": "def456" },
+    "labels": [],
+    "assignees": [],
+    "user": { "login": "alice" },
+    "state": "open",
+    "merged": false
+  },
+  "repository": {
+    "full_name": "test-org/test-repo",
+    "name": "test-repo",
+    "owner": { "login": "test-org" }
+  },
+  "sender": { "login": "alice" }
+}

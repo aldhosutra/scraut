@@ -2,6 +2,19 @@ name: Scraut — Issue Triage
 on:
   issues:
     types: [opened]
+  workflow_dispatch:
+    inputs:
+      issue:
+        description: 'Issue number to triage'
+        required: true
+      repo:
+        description: 'org/repo (defaults to current)'
+        required: false
+      dry_run:
+        description: 'Skip all writes and API calls (safe for local act testing)'
+        required: false
+        default: 'false'
+        type: boolean
 
 jobs:
   triage:
@@ -21,7 +34,9 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+          DRY_RUN_FLAG: ${{ github.event.inputs.dry_run == 'true' && '--dry-run' || '' }}
         run: |
+          ISSUE="${{ github.event.issue.number || github.event.inputs.issue }}"
+          REPO="${{ github.event.repository.full_name || github.event.inputs.repo || github.repository }}"
           python apps/automation/scraut/scrum/backlog/triage_issue.py \
-            --issue ${{ github.event.issue.number }} \
-            --repo ${{ github.repository }}
+            --issue "$ISSUE" --repo "$REPO" $DRY_RUN_FLAG

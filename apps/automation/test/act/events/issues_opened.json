@@ -1,0 +1,18 @@
+{
+  "action": "opened",
+  "issue": {
+    "number": 99,
+    "title": "Login page crashes on Safari iOS 16",
+    "body": "Steps to reproduce:\n1. Open the app on Safari iOS 16\n2. Tap the login button\n3. White screen — page does not load\n\n**Expected:** Login form renders\n**Actual:** Blank white screen, no JS errors visible in console\n\nReported by 3 users in support tickets this week.",
+    "labels": [],
+    "assignees": [],
+    "state": "open",
+    "user": { "login": "test-user" }
+  },
+  "repository": {
+    "full_name": "test-org/test-repo",
+    "name": "test-repo",
+    "owner": { "login": "test-org" }
+  },
+  "sender": { "login": "test-user" }
+}

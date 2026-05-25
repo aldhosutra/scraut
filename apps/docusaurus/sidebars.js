@@ -85,6 +85,7 @@ const sidebars = {
         'reference/workspace-formats',
         'reference/llm-providers',
         'reference/labels',
+        'reference/testing',
       ],
     },
     {

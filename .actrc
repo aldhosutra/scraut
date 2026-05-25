@@ -1,0 +1,5 @@
+# act configuration — https://github.com/nektos/act
+# Use a lightweight ubuntu image rather than the full 18 GB GitHub runner image.
+-P ubuntu-latest=ghcr.io/catthehacker/ubuntu:act-latest
+# Ensures consistent behaviour on Apple Silicon and other non-amd64 hosts.
+--container-architecture linux/amd64

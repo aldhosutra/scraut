@@ -76,6 +76,8 @@ secrets.yaml
 *.key
 *.p12
 *.pfx
+# act secrets file (copy .secrets.example → .secrets and fill in values)
+.secrets
 
 # Node / frontend apps
 node_modules/

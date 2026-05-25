@@ -3,6 +3,12 @@ on:
   schedule:
     - cron: '55 1 * * 1-5'  # 1:55 AM UTC weekdays (adjust for timezone)
   workflow_dispatch:
+    inputs:
+      dry_run:
+        description: 'Skip all writes (safe for local act testing)'
+        required: false
+        default: 'false'
+        type: boolean
 
 jobs:
   reset-templates:
@@ -18,9 +24,12 @@ jobs:
       - run: pip install -r apps/automation/requirements.txt
 
       - name: Reset standup templates
-        run: python apps/automation/scraut/scrum/standup/reset_templates.py
+        env:
+          DRY_RUN_FLAG: ${{ github.event.inputs.dry_run == 'true' && '--dry-run' || '' }}
+        run: python apps/automation/scraut/scrum/standup/reset_templates.py $DRY_RUN_FLAG
 
       - name: Commit new templates
+        if: ${{ github.event.inputs.dry_run != 'true' }}
         run: |
           git config user.email "scraut-bot@noreply.github.com"
           git config user.name "Scraut Bot"
