@@ -8,10 +8,13 @@ from pathlib import Path
 from typing import Any, Optional
 import logging
 
+from scraut.platform.utils.file_utils import format_sprint_num  # noqa: F401 — re-exported for callers
+
 logger = logging.getLogger(__name__)
 
 _config: Optional[dict] = None
 _repo_root: Optional[Path] = None
+_config_path: Optional[Path] = None
 
 
 def _resolve_repo_root(config_file: Path) -> Path:
@@ -45,7 +48,7 @@ def _find_config() -> tuple[Path, Path]:
 
 def load_config(config_path: Optional[str] = None) -> dict:
     """Load scraut.yml from repo root (or workspace/) or a specified path."""
-    global _config, _repo_root
+    global _config, _repo_root, _config_path
 
     if config_path:
         path = Path(config_path).resolve()
@@ -58,6 +61,7 @@ def load_config(config_path: Optional[str] = None) -> dict:
 
     _config = config
     _repo_root = root
+    _config_path = path
     logger.info(f"Loaded config from {path}")
     return config
 
@@ -67,6 +71,13 @@ def get_config() -> dict:
     if _config is None:
         load_config()
     return _config
+
+
+def get_config_path() -> Path:
+    """Return the path to the loaded scraut.yml."""
+    if _config_path is None:
+        load_config()
+    return _config_path
 
 
 def get_repo_root() -> Path:
@@ -108,6 +119,11 @@ def get_current_sprint() -> int:
     return get_config()["sprint"]["current_sprint"]
 
 
+def get_folder_padding() -> int:
+    """Return the sprint folder zero-padding width from config (default 3)."""
+    return int(get_config().get("sprint", {}).get("folder_padding", 3))
+
+
 def get_team_members() -> list[dict]:
     return get_config()["team"]["members"]
 
@@ -120,14 +136,14 @@ def get_sprint_folder(sprint_num: Optional[int] = None) -> Path:
     """Return the human-editable sprint input folder."""
     if sprint_num is None:
         sprint_num = get_current_sprint()
-    return get_workspace_root() / "sprint" / f"{sprint_num:02d}"
+    return get_workspace_root() / "sprint" / format_sprint_num(sprint_num, get_folder_padding())
 
 
 def get_sprint_output_folder(sprint_num: Optional[int] = None) -> Path:
     """Return the generated sprint output folder."""
     if sprint_num is None:
         sprint_num = get_current_sprint()
-    return get_scraut_root() / "sprint" / f"{sprint_num:02d}"
+    return get_scraut_root() / "sprint" / format_sprint_num(sprint_num, get_folder_padding())
 
 
 def get_llm_config() -> dict:

@@ -86,5 +86,14 @@ def today_str() -> str:
     return date.today().isoformat()
 
 
-def sprint_folder_name(sprint_num: int) -> str:
-    return f"sprint/{sprint_num:02d}"
+def format_sprint_num(sprint_num: int, padding: int = 3) -> str:
+    """Return the canonical zero-padded sprint number string.
+
+    `padding` is the minimum field width (default 3). Pass `get_folder_padding()`
+    from config.py at every call site so the width tracks the configured value.
+    """
+    return f"{sprint_num:0{padding}d}"
+
+
+def sprint_folder_name(sprint_num: int, padding: int = 3) -> str:
+    return f"sprint/{format_sprint_num(sprint_num, padding)}"
