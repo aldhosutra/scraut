@@ -1,4 +1,4 @@
-.PHONY: help init test test-unit test-integration test-act lint install docs docs-serve
+.PHONY: help init test test-unit test-integration test-act lint install docs docs-serve publish
 
 PYTHON := python3
 PYTEST  := cd apps/automation && python -m pytest
@@ -42,6 +42,11 @@ test-act:      ## Run act workflow tests locally (requires Docker + act)
 lint:          ## Lint Python code (flake8) and workflow YAML (actionlint)
 	flake8 apps/automation/scraut/ --max-line-length=100 --ignore=E501,W503
 	actionlint
+
+# ── Publish ──────────────────────────────────────────────────────────────────
+
+publish: apps/create-scraut/node_modules  ## Publish create-scraut to npm (requires npm login)
+	cd apps/create-scraut && npm publish --access public
 
 # ── Docs ─────────────────────────────────────────────────────────────────────
 
