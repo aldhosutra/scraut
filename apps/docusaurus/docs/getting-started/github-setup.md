@@ -76,16 +76,45 @@ The "read and write permissions" is required so workflows can commit generated s
 
 ## Step 4: Enable GitHub Pages (for the Visibility Portal)
 
+Your GitHub Pages URL will become your team's sprint dashboard.
+
 1. Go to **Settings** → **Pages**
-2. Under **Source**, select **Deploy from a branch**
-3. Select branch: `main`, folder: `/ (root)` or `/docs` depending on your portal config
-4. Click **Save**
+2. Under **Source**, select **GitHub Actions** *(not "Deploy from a branch")*
+3. Click **Save**
 
-The portal URL will be `https://your-org.github.io/your-repo/`.
+That's all. The `portal-publish.yml` workflow handles the actual deployment automatically — it fires whenever the visibility engine updates `apps/portal/`. Your dashboard will be live at:
 
-:::info
-The portal publish workflow (`portal-publish.yml`) handles the actual deployment. GitHub Pages just needs to be enabled once.
+```
+https://your-org.github.io/your-repo/
+```
+
+:::info How the portal gets updated
+The **Visibility Engine** workflow runs every 30 minutes and on every push to standup/sprint files. It generates `apps/portal/index.html` and `apps/portal/data.json` from the current sprint state, commits them, which triggers `portal-publish.yml` to redeploy Pages.
 :::
+
+:::warning Don't select "Deploy from a branch"
+"Deploy from a branch → main → /docs" is the setting for the Scraut documentation site at [aldhosutra.github.io/scraut](https://aldhosutra.github.io/scraut/). That's the template repo's setup. Your team repo should use **GitHub Actions** as the source so the portal workflow controls deployment.
+:::
+
+---
+
+## Step 4b: Standup web form (optional — requires Vercel or Netlify)
+
+`apps/portal/form.html` is a web form that lets non-technical team members submit standups without knowing Git. It submits to `apps/portal/api/standup.js`, which is a serverless edge function.
+
+**GitHub Pages cannot run server-side functions.** The form works as a static page but the submit button needs the edge function deployed separately.
+
+To enable form submissions:
+
+1. Deploy to **Vercel**: `cd apps/portal && npx vercel --prod`
+   — or connect the repo to Vercel via the dashboard, set root to `apps/portal`
+2. Set these environment variables in Vercel:
+   - `GITHUB_TOKEN` — PAT with `repo` write scope for your team's repo
+   - `SCRAUT_REPO` — `your-org/your-repo`
+   - `PORTAL_TOKEN` — any shared secret string (prevents abuse)
+3. Update `CONFIG.apiEndpoint` in `apps/portal/form.html` to your Vercel function URL
+
+Without this deployment, the form HTML is still served (team members can see it), but submissions will fail. The primary standup flow — editing the Markdown file directly in GitHub — always works regardless.
 
 ---
 

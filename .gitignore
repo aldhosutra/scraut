@@ -95,9 +95,9 @@ coverage/
 apps/docusaurus/.docusaurus/
 apps/docusaurus/node_modules/
 
-# Scraut generated portal output
-apps/portal/data.json
-apps/portal/index.html
+# Scraut generated portal build artifacts (framework output only)
+# Note: apps/portal/index.html and data.json are bot-generated and ARE committed
+# (visibility-engine.yml generates them; portal-publish.yml deploys them)
 apps/portal/out/
 apps/portal/dist/
 

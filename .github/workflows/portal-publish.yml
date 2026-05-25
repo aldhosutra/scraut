@@ -1,5 +1,18 @@
 name: Scraut — Publish Portal (GitHub Pages)
 
+# Deploys apps/portal/ (the team sprint dashboard) to GitHub Pages.
+#
+# This workflow is for TEAM REPOS — clones of aldhosutra/scraut where the
+# team uses Scraut for their sprints. Their GitHub Pages URL becomes the
+# sprint dashboard.
+#
+# The aldhosutra/scraut TEMPLATE REPO uses a different Pages setup:
+# branch-based deployment from /docs (Docusaurus documentation site).
+# The template repo skips this workflow via the SKIP_PORTAL_DEPLOY secret.
+#
+# To disable portal deploy in your repo: add repository secret
+# SKIP_PORTAL_DEPLOY=true
+
 on:
   push:
     branches: [main]
@@ -19,6 +32,7 @@ concurrency:
 jobs:
   publish:
     runs-on: ubuntu-latest
+    if: ${{ vars.SKIP_PORTAL_DEPLOY != 'true' }}
     environment:
       name: github-pages
       url: ${{ steps.deployment.outputs.page_url }}
