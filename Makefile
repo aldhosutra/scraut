@@ -1,4 +1,4 @@
-.PHONY: help test test-unit test-integration test-act lint install
+.PHONY: help init test test-unit test-integration test-act lint install
 
 PYTHON := python3
 PYTEST  := cd apps/automation && python -m pytest
@@ -6,6 +6,15 @@ PYTEST  := cd apps/automation && python -m pytest
 help:          ## Show this help
 	@grep -E '^[a-zA-Z_-]+:.*?## .*$$' $(MAKEFILE_LIST) | \
 	  awk 'BEGIN {FS = ":.*?## "}; {printf "  \033[36m%-20s\033[0m %s\n", $$1, $$2}'
+
+# ── Init ─────────────────────────────────────────────────────────────────────
+
+# Use Make's dependency tracking: npm install only reruns when package.json changes.
+apps/create-scraut/node_modules: apps/create-scraut/package.json
+	cd apps/create-scraut && npm install
+
+init: apps/create-scraut/node_modules  ## Run the interactive setup wizard
+	node apps/create-scraut/bin/create-scraut.js
 
 # ── Install ──────────────────────────────────────────────────────────────────
 
