@@ -11,8 +11,22 @@
     "scrum",
     "automation",
     "github",
-    "agile"
+    "agile",
+    "create-scraut",
+    "sprint",
+    "standup",
+    "project-management"
   ],
+  "homepage": "https://aldhosutra.github.io/scraut/",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/aldhosutra/scraut.git",
+    "directory": "apps/create-scraut"
+  },
+  "bugs": {
+    "url": "https://github.com/aldhosutra/scraut/issues"
+  },
+  "license": "MIT",
   "dependencies": {
     "inquirer": "^9.0.0",
     "@octokit/rest": "^20.0.0",
