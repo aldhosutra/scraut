@@ -81,26 +81,33 @@ class TestCompleteRouting:
         with patch("scraut.platform.llm.client.get_llm_config", return_value=_cfg("anthropic")):
             with patch("scraut.platform.llm.client._call_anthropic", return_value="ans") as m:
                 assert llm_client.complete("q") == "ans"
-        m.assert_called_once_with("q", None, 100)
+        m.assert_called_once_with("q", None, 100, model="test-model")
 
     def test_routes_openai(self, monkeypatch):
         monkeypatch.setenv("OPENAI_API_KEY", "sk-test")
         with patch("scraut.platform.llm.client.get_llm_config", return_value=_cfg("openai")):
             with patch("scraut.platform.llm.client._call_openai", return_value="ans") as m:
                 assert llm_client.complete("q") == "ans"
-        m.assert_called_once_with("q", None, 100)
+        m.assert_called_once_with("q", None, 100, model="test-model")
 
     def test_routes_gemini(self):
         with patch("scraut.platform.llm.client.get_llm_config", return_value=_cfg("gemini")):
             with patch("scraut.platform.llm.client._call_gemini", return_value="ans") as m:
                 assert llm_client.complete("q") == "ans"
-        m.assert_called_once_with("q", None, 100)
+        m.assert_called_once_with("q", None, 100, model="test-model")
 
     def test_routes_ollama(self):
         with patch("scraut.platform.llm.client.get_llm_config", return_value=_cfg("ollama")):
             with patch("scraut.platform.llm.client._call_ollama", return_value="ans") as m:
                 assert llm_client.complete("q") == "ans"
-        m.assert_called_once_with("q", None, 100)
+        m.assert_called_once_with("q", None, 100, model="test-model")
+
+    def test_routes_github(self, monkeypatch):
+        monkeypatch.setenv("GITHUB_TOKEN", "gh-tok")
+        with patch("scraut.platform.llm.client.get_llm_config", return_value=_cfg("github")):
+            with patch("scraut.platform.llm.client._call_github", return_value="ans") as m:
+                assert llm_client.complete("q") == "ans"
+        m.assert_called_once_with("q", None, 100, model="test-model")
 
     def test_unknown_provider_returns_empty(self):
         with patch("scraut.platform.llm.client.get_llm_config", return_value=_cfg("banana")):
@@ -111,14 +118,32 @@ class TestCompleteRouting:
         with patch("scraut.platform.llm.client.get_llm_config", return_value=_cfg()):
             with patch("scraut.platform.llm.client._call_anthropic", return_value="ok") as m:
                 llm_client.complete("q", system="Be concise.")
-        m.assert_called_once_with("q", "Be concise.", 100)
+        m.assert_called_once_with("q", "Be concise.", 100, model="test-model")
 
     def test_explicit_max_tokens_overrides_config(self, monkeypatch):
         monkeypatch.setenv("ANTHROPIC_API_KEY", "sk-test")
         with patch("scraut.platform.llm.client.get_llm_config", return_value=_cfg(max_tokens=100)):
             with patch("scraut.platform.llm.client._call_anthropic", return_value="ok") as m:
                 llm_client.complete("q", max_tokens=500)
-        m.assert_called_once_with("q", None, 500)
+        m.assert_called_once_with("q", None, 500, model="test-model")
+
+    def test_use_small_model_selects_small_model(self, monkeypatch):
+        monkeypatch.setenv("ANTHROPIC_API_KEY", "sk-test")
+        cfg = _cfg("anthropic")
+        cfg["small_model"] = "claude-haiku-small"
+        with patch("scraut.platform.llm.client.get_llm_config", return_value=cfg):
+            with patch("scraut.platform.llm.client._call_anthropic", return_value="ok") as m:
+                llm_client.complete("q", use_small_model=True)
+        m.assert_called_once_with("q", None, 100, model="claude-haiku-small")
+
+    def test_use_small_model_falls_back_when_unset(self, monkeypatch):
+        monkeypatch.setenv("ANTHROPIC_API_KEY", "sk-test")
+        cfg = _cfg("anthropic")
+        cfg["small_model"] = ""
+        with patch("scraut.platform.llm.client.get_llm_config", return_value=cfg):
+            with patch("scraut.platform.llm.client._call_anthropic", return_value="ok") as m:
+                llm_client.complete("q", use_small_model=True)
+        m.assert_called_once_with("q", None, 100, model="test-model")
 
     def test_daily_limit_blocks_call(self):
         llm_client._daily_tokens_used = 51

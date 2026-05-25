@@ -147,7 +147,7 @@ def build_recommendation(
         issues_text=issues_text,
         okr_text=(okr_text[:400] if okr_text else "Not defined"),
     )
-    result = complete(prompt, system=SYSTEM_SCRUM_ASSISTANT)
+    result = complete(prompt, system=SYSTEM_SCRUM_ASSISTANT, use_small_model=True)
     return result or _fallback_recommendation(display, open_issues)
 
 

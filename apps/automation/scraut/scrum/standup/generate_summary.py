@@ -59,7 +59,7 @@ def generate_summary(config: dict, target_date: str, dry_run: bool = False) -> s
     )
 
     logger.info(f"Generating standup summary for {target_date}...")
-    summary = complete(prompt, system=SYSTEM_SCRUM_ASSISTANT)
+    summary = complete(prompt, system=SYSTEM_SCRUM_ASSISTANT, use_small_model=True)
 
     if not summary:
         summary = f"# Standup Digest — {target_date}\n\n*LLM unavailable. See individual standup files.*\n"

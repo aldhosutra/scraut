@@ -49,8 +49,14 @@ repos:                              # Connected GitHub repos for code activity s
     enabled: false
 
 llm:
-  provider: anthropic               # anthropic | openai | gemini | ollama
+  provider: anthropic               # anthropic | openai | gemini | ollama | github
+                                    #   github: uses GITHUB_TOKEN (auto-provided by Actions, no extra secret)
   model: claude-sonnet-4-6          # Model name (provider-specific)
+  small_model: ""                   # Optional: cheaper/faster model for simple tasks
+                                    #   anthropic example: claude-haiku-4-5-20251001
+                                    #   openai example:    gpt-4o-mini
+                                    #   github example:    gpt-4o-mini
+                                    #   Leave empty to use the primary model for everything.
   base_url: ""                      # Optional: override API base URL
                                     #   anthropic: Anthropic-compatible proxy
                                     #   openai: Groq / DeepSeek / LM Studio / any OpenAI-compat

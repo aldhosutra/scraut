@@ -1,7 +1,7 @@
 """
 platform/llm/client.py
 Swappable LLM provider. Reads provider from scraut.yml.
-Supports: anthropic, openai, gemini, ollama.
+Supports: anthropic, openai, gemini, ollama, github.
 All calls include token tracking and cost controls.
 """
 import os
@@ -15,13 +15,34 @@ logger = logging.getLogger(__name__)
 
 _daily_tokens_used = 0
 
+# GitHub Models inference endpoint — uses GITHUB_TOKEN, no extra secret needed.
+_GITHUB_MODELS_BASE_URL = "https://models.inference.ai.azure.com"
 
-def complete(prompt: str, system: Optional[str] = None,
-             max_tokens: Optional[int] = None) -> str:
-    """Call the configured LLM provider. Returns text; falls back to '' on failure."""
+
+def _resolve_model(config: dict, use_small_model: bool) -> Optional[str]:
+    """Return the model name to use. Falls back to primary model if small_model is unset."""
+    if use_small_model:
+        small = config.get("small_model", "")
+        if small:
+            return small
+    return config.get("model")
+
+
+def complete(
+    prompt: str,
+    system: Optional[str] = None,
+    max_tokens: Optional[int] = None,
+    use_small_model: bool = False,
+) -> str:
+    """Call the configured LLM provider. Returns text; falls back to '' on failure.
+
+    Pass use_small_model=True for simple tasks (summaries, classification, short DMs)
+    to use llm.small_model when configured, reducing cost without sacrificing quality.
+    """
     global _daily_tokens_used
     config = get_llm_config()
     provider = config.get("provider", "anthropic")
+    model = _resolve_model(config, use_small_model)
     max_tok = max_tokens or config.get("max_tokens", 1000)
     daily_limit = config.get("cost_controls", {}).get("max_daily_tokens", 100000)
 
@@ -31,21 +52,28 @@ def complete(prompt: str, system: Optional[str] = None,
 
     try:
         if provider == "anthropic":
-            return _call_anthropic(prompt, system, max_tok)
+            return _call_anthropic(prompt, system, max_tok, model=model)
         elif provider == "openai":
-            return _call_openai(prompt, system, max_tok)
+            return _call_openai(prompt, system, max_tok, model=model)
         elif provider == "gemini":
-            return _call_gemini(prompt, system, max_tok)
+            return _call_gemini(prompt, system, max_tok, model=model)
         elif provider == "ollama":
-            return _call_ollama(prompt, system, max_tok)
+            return _call_ollama(prompt, system, max_tok, model=model)
+        elif provider == "github":
+            return _call_github(prompt, system, max_tok, model=model)
         else:
             raise ValueError(f"Unknown LLM provider: {provider}")
     except Exception as e:
-        logger.error(f"LLM call failed: {e}")
+        logger.error(f"LLM call failed ({provider}): {e}")
         return ""
 
 
-def _call_anthropic(prompt: str, system: Optional[str], max_tokens: int) -> str:
+def _call_anthropic(
+    prompt: str,
+    system: Optional[str],
+    max_tokens: int,
+    model: Optional[str] = None,
+) -> str:
     import anthropic
     config = get_llm_config()
     client_kwargs: dict = {"api_key": os.environ["ANTHROPIC_API_KEY"]}
@@ -56,7 +84,7 @@ def _call_anthropic(prompt: str, system: Optional[str], max_tokens: int) -> str:
     client = anthropic.Anthropic(**client_kwargs)
     messages = [{"role": "user", "content": prompt}]
     call_kwargs: dict = {
-        "model": config.get("model", "claude-sonnet-4-6"),
+        "model": model or config.get("model", "claude-sonnet-4-6"),
         "max_tokens": max_tokens,
         "messages": messages,
     }
@@ -69,15 +97,22 @@ def _call_anthropic(prompt: str, system: Optional[str], max_tokens: int) -> str:
     return response.content[0].text
 
 
-def _call_openai(prompt: str, system: Optional[str], max_tokens: int) -> str:
+def _call_openai(
+    prompt: str,
+    system: Optional[str],
+    max_tokens: int,
+    model: Optional[str] = None,
+    api_key: Optional[str] = None,
+    base_url: Optional[str] = None,
+) -> str:
     from openai import OpenAI
     config = get_llm_config()
-    # Use "no-key" when key is absent — allows unauthenticated local endpoints.
-    client_kwargs: dict = {"api_key": os.environ.get("OPENAI_API_KEY", "no-key")}
-    base_url = config.get("base_url", "")
-    if base_url:
-        client_kwargs["base_url"] = base_url
+    resolved_key = api_key or os.environ.get("OPENAI_API_KEY", "no-key")
+    resolved_url = base_url or config.get("base_url", "") or None
 
+    client_kwargs: dict = {"api_key": resolved_key}
+    if resolved_url:
+        client_kwargs["base_url"] = resolved_url
     client = OpenAI(**client_kwargs)
     messages = []
     if system:
@@ -85,27 +120,52 @@ def _call_openai(prompt: str, system: Optional[str], max_tokens: int) -> str:
     messages.append({"role": "user", "content": prompt})
 
     response = client.chat.completions.create(
-        model=config.get("model", "gpt-4o"),
+        model=model or config.get("model", "gpt-4o"),
         max_tokens=max_tokens,
         messages=messages,
     )
     return response.choices[0].message.content
 
 
-def _call_gemini(prompt: str, system: Optional[str], max_tokens: int) -> str:
+def _call_github(
+    prompt: str,
+    system: Optional[str],
+    max_tokens: int,
+    model: Optional[str] = None,
+) -> str:
+    """Call GitHub Models — OpenAI-compatible, authenticated with GITHUB_TOKEN.
+
+    No extra secret needed: GITHUB_TOKEN is auto-provided by GitHub Actions.
+    Default model: gpt-4o-mini (fast and cheap for most Scraut tasks).
+    """
+    config = get_llm_config()
+    return _call_openai(
+        prompt, system, max_tokens,
+        model=model or config.get("model", "gpt-4o-mini"),
+        api_key=os.environ.get("GITHUB_TOKEN", ""),
+        base_url=_GITHUB_MODELS_BASE_URL,
+    )
+
+
+def _call_gemini(
+    prompt: str,
+    system: Optional[str],
+    max_tokens: int,
+    model: Optional[str] = None,
+) -> str:
     import google.generativeai as genai
     config = get_llm_config()
     genai.configure(api_key=os.environ.get("GOOGLE_API_KEY", ""))
 
-    model_name = config.get("model", "gemini-1.5-pro")
+    model_name = model or config.get("model", "gemini-1.5-pro")
     generation_config = genai.types.GenerationConfig(max_output_tokens=max_tokens)
-    model = genai.GenerativeModel(
+    genai_model = genai.GenerativeModel(
         model_name,
         system_instruction=system if system else None,
         generation_config=generation_config,
     )
 
-    response = model.generate_content(prompt)
+    response = genai_model.generate_content(prompt)
     global _daily_tokens_used
     meta = getattr(response, "usage_metadata", None)
     if meta:
@@ -116,21 +176,30 @@ def _call_gemini(prompt: str, system: Optional[str], max_tokens: int) -> str:
     return response.text
 
 
-def _call_ollama(prompt: str, system: Optional[str], max_tokens: int) -> str:
+def _call_ollama(
+    prompt: str,
+    system: Optional[str],
+    max_tokens: int,
+    model: Optional[str] = None,
+) -> str:
     import requests
     config = get_llm_config()
     url = config.get("ollama_url", "http://localhost:11434/api/generate")
     full_prompt = f"{system}\n\n{prompt}" if system else prompt
     response = requests.post(url, json={
-        "model": config.get("model", "llama3"),
+        "model": model or config.get("model", "llama3"),
         "prompt": full_prompt,
         "stream": False,
     })
     return response.json()["response"]
 
 
-def complete_batch(prompts: list, system: Optional[str] = None,
-                   max_tokens: Optional[int] = None) -> list:
+def complete_batch(
+    prompts: list,
+    system: Optional[str] = None,
+    max_tokens: Optional[int] = None,
+    use_small_model: bool = False,
+) -> list:
     """
     Process multiple prompts in a single LLM call to reduce token overhead.
     Each prompt is separated with a numbered marker.
@@ -138,7 +207,7 @@ def complete_batch(prompts: list, system: Optional[str] = None,
     """
     config = get_llm_config()
     if not config.get("cost_controls", {}).get("batch_where_possible"):
-        return [complete(p, system, max_tokens) for p in prompts]
+        return [complete(p, system, max_tokens, use_small_model) for p in prompts]
 
     if not prompts:
         return []
@@ -152,7 +221,8 @@ def complete_batch(prompts: list, system: Optional[str] = None,
         f'["result for prompt 1", "result for prompt 2", ...]'
     )
 
-    raw = complete(batch_prompt, system, max_tokens=max_tokens or 2000)
+    raw = complete(batch_prompt, system, max_tokens=max_tokens or 2000,
+                   use_small_model=use_small_model)
     try:
         clean = re.sub(r"```(?:json)?\s*", "", raw).strip().rstrip("`").strip()
         results = json.loads(clean)
@@ -161,15 +231,18 @@ def complete_batch(prompts: list, system: Optional[str] = None,
     except Exception:
         pass
 
-    return [complete(p, system, max_tokens) for p in prompts]
+    return [complete(p, system, max_tokens, use_small_model) for p in prompts]
 
 
-def complete_json(prompt: str, system: Optional[str] = None) -> dict:
+def complete_json(
+    prompt: str,
+    system: Optional[str] = None,
+    use_small_model: bool = False,
+) -> dict:
     """Call LLM expecting JSON output. Strips markdown fences before parsing."""
-    text = complete(prompt, system)
+    text = complete(prompt, system, use_small_model=use_small_model)
     if not text:
         return {}
-    # Strip ```json fences
     clean = re.sub(r"```(?:json)?\s*", "", text)
     clean = re.sub(r"```\s*$", "", clean).strip()
     try:

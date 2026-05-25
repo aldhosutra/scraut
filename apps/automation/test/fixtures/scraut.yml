@@ -47,6 +47,7 @@ repos: []
 llm:
   provider: anthropic
   model: claude-sonnet-4-6
+  small_model: ""
   max_tokens: 1000
   cost_controls:
     max_daily_tokens: 100000

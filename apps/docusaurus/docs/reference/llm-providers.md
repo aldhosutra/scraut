@@ -4,7 +4,40 @@ sidebar_position: 5
 
 # LLM Providers
 
-Scraut supports four LLM providers and custom endpoints. Configure your choice in `workspace/scraut.yml`.
+Scraut supports five LLM providers and custom endpoints. Configure your choice in `workspace/scraut.yml`.
+
+---
+
+## GitHub Models (zero extra secrets) {#github}
+
+:::tip Best for getting started in GitHub Actions
+GitHub Models uses your `GITHUB_TOKEN` — which is automatically available in every GitHub Actions workflow. No API key setup, no billing account. Ideal for teams that want to try Scraut before committing to a cloud provider.
+:::
+
+```yaml
+llm:
+  provider: github
+  model: gpt-4o                # or gpt-4o-mini for even lower cost
+  small_model: gpt-4o-mini     # optional: cheaper model for simple tasks
+```
+
+**API key:** None — `GITHUB_TOKEN` is auto-provided by GitHub Actions
+
+**Inference endpoint:** `https://models.inference.ai.azure.com` (OpenAI-compatible)
+
+**Available models:**
+| Model | Notes |
+|-------|-------|
+| `gpt-4o` | Best quality — recommended for planning and review |
+| `gpt-4o-mini` | Faster, very low cost — good as `small_model` |
+| `meta-llama-3.1-70b-instruct` | Open model alternative |
+| `mistral-large` | Strong reasoning, European data residency |
+
+See the full [GitHub Models catalog](https://github.com/marketplace/models) for the complete list.
+
+:::caution Rate limits
+GitHub Models has per-model rate limits (typically 15–50 req/min on the free tier). For high-volume sprints, consider setting `cost_controls.batch_where_possible: true` or switching to a paid provider.
+:::
 
 ---
 
@@ -133,18 +166,44 @@ llm:
 
 ---
 
+## Small model support
+
+Set `small_model` to a cheaper/faster model for tasks that don't need full reasoning power (standup summaries, issue classification, coaching nudges). The primary `model` is still used for complex tasks (sprint planning, retrospective synthesis, milestone decomposition).
+
+```yaml
+llm:
+  provider: anthropic
+  model: claude-sonnet-4-6          # full model — planning, synthesis, review
+  small_model: claude-haiku-4-5-20251001  # fast model — summaries, triage, coach DMs
+```
+
+**Tasks that use `small_model` when set:**
+- Daily standup summary
+- Issue triage
+- Standup coach DMs
+
+**Tasks that always use the primary `model`:**
+- Sprint planning
+- Retrospective synthesis
+- Milestone decomposition
+- Backlog prioritisation
+
+Leave `small_model: ""` to use the primary model for everything.
+
+---
+
 ## Choosing a provider
 
-| Factor | Anthropic | OpenAI | Gemini | Ollama |
-|--------|----------|--------|--------|--------|
-| Quality | Excellent | Excellent | Very good | Good (depends on model) |
-| Speed | Fast | Fast | Fast | Varies |
-| Cost | Medium | Medium | Low | Free |
-| Privacy | Cloud | Cloud | Cloud | Local |
-| GitHub Actions | ✓ | ✓ | ✓ | ✗ (local only) |
-| Free tier | No | Limited | Yes (AI Studio) | Yes |
+| Factor | GitHub Models | Anthropic | OpenAI | Gemini | Ollama |
+|--------|-------------|----------|--------|--------|--------|
+| Quality | Very good | Excellent | Excellent | Very good | Good (depends on model) |
+| Speed | Fast | Fast | Fast | Fast | Varies |
+| Cost | Free (rate-limited) | Medium | Medium | Low | Free |
+| Privacy | Cloud | Cloud | Cloud | Cloud | Local |
+| GitHub Actions | ✓ (no setup) | ✓ | ✓ | ✓ | ✗ (local only) |
+| Free tier | Yes | No | Limited | Yes (AI Studio) | Yes |
 
-**Recommendation:** Start with Anthropic (`claude-sonnet-4-6`) for the best out-of-box experience. Switch to Gemini or Groq (via OpenAI-compat) if cost is a concern.
+**Recommendation:** Start with **GitHub Models** (`gpt-4o`) if you want zero setup — `GITHUB_TOKEN` is already available in every workflow. Switch to **Anthropic** (`claude-sonnet-4-6`) for the highest quality. Use **Gemini** or **Groq** (via OpenAI-compat) for low cost at scale.
 
 ---
 

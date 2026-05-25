@@ -129,8 +129,9 @@ Requires `SCRAUT_GITHUB_TOKEN` secret with `repo:read` permission.
 
 ```yaml
 llm:
-  provider: string      # anthropic | openai | gemini | ollama
+  provider: string      # anthropic | openai | gemini | ollama | github
   model: string         # Provider-specific model name
+  small_model: string   # Optional: cheaper/faster model for simple tasks
   base_url: string      # Optional: custom API endpoint
   max_tokens: integer   # Per-call output token limit
   cost_controls:
@@ -138,7 +139,17 @@ llm:
     batch_where_possible: bool  # Combine multiple LLM calls where safe
 ```
 
-See [LLM Providers](./llm-providers) for model options and base_url examples.
+| Field | Default | Notes |
+|-------|---------|-------|
+| `provider` | `anthropic` | `github` requires no extra secret — uses `GITHUB_TOKEN` |
+| `model` | Provider default | Used for complex tasks (planning, synthesis, decomposition) |
+| `small_model` | `""` (uses primary) | When set, used for standup summaries, issue triage, and coach DMs |
+| `base_url` | Provider default | Override for proxies or OpenAI-compatible endpoints |
+| `max_tokens` | `1000` | Per-call output token limit |
+| `cost_controls.max_daily_tokens` | `100000` | Hard fail-safe across all daily LLM calls |
+| `cost_controls.batch_where_possible` | `false` | Merge multiple LLM requests into one call |
+
+See [LLM Providers](./llm-providers) for model options, `small_model` examples, and `base_url` patterns.
 
 ---
 

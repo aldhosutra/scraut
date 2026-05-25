@@ -44,7 +44,7 @@ def triage_issue(issue_number: int, repo_name: str, config: dict) -> None:
         title=issue.title,
         body=issue.body or "",
     )
-    result = complete_json(prompt, system=SYSTEM_SCRUM_ASSISTANT)
+    result = complete_json(prompt, system=SYSTEM_SCRUM_ASSISTANT, use_small_model=True)
 
     if not result:
         logger.warning("LLM triage failed. Skipping.")
