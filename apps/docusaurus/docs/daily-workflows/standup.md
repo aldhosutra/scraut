@@ -161,6 +161,24 @@ The template is created fresh each morning, so tomorrow you start clean.
 
 ---
 
+## Standup Coach (optional)
+
+When `standup_coach.enabled: true` in `scraut.yml`, Scraut checks each team member's `Today` section after the summary runs. If it's short and doesn't reference any sprint issues, the person receives a **private Slack DM** (never posted to the team channel) with personalised task recommendations based on their open issues, the sprint goal, and OKRs.
+
+```
+🤖 Scraut (private DM to Alice)
+
+Looks like today is wide open! Given the sprint goal of shipping the
+OAuth integration, #21 (OAuth: Google provider) would be the highest-impact
+thing to push forward — it's the biggest blocker for the v1.0 milestone.
+If that's blocked, #15 (rate limiting) is self-contained and ready to go.
+Adding issue numbers in tomorrow's standup helps the team spot dependencies early.
+```
+
+The SM can optionally receive a daily summary of who was coached via `notify_sm: true`. See [Standup Coach configuration →](../reference/configuration#standup_coach).
+
+---
+
 ## Standup for AI agents
 
 When [Agent Mode](../agent-mode/overview) is enabled, AI agents also submit standups in the same format, in the same directory:

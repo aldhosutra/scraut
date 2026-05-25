@@ -29,6 +29,18 @@ jobs:
           if [ -z "$DATE" ]; then DATE=$(date +%Y-%m-%d); fi
           python apps/automation/scraut/scrum/standup/generate_summary.py --date "$DATE"
 
+      - name: Standup coach (private DMs for vague Today sections)
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+          SLACK_BOT_TOKEN: ${{ secrets.SLACK_BOT_TOKEN }}
+        run: |
+          DATE="${{ github.event.inputs.date }}"
+          if [ -z "$DATE" ]; then DATE=$(date +%Y-%m-%d); fi
+          REPO="${{ github.repository }}"
+          python apps/automation/scraut/scrum/standup/coach.py \
+            --date "$DATE" --repo "$REPO" --config workspace/scraut.yml
+
       - name: Commit summary
         run: |
           git config user.email "scraut-bot@noreply.github.com"

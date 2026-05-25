@@ -81,3 +81,10 @@ holidays:
   country_code: ""
   extra_dates: []
   skip_dates: []
+
+standup_coach:
+  enabled: false
+  min_today_words: 20
+  require_issue_ref: true
+  skip_sprint_start_days: 1
+  notify_sm: false

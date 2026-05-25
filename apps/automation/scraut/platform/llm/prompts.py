@@ -373,3 +373,34 @@ Maximum 300 words.
 
 Output only the markdown. No preamble.
 """
+
+STANDUP_COACH_RECOMMENDATION = """
+You are a supportive Scrum Master assistant sending a private Slack message to a team member.
+
+Their standup Today section was brief and didn't reference specific issues or tasks.
+This is a friendly, private nudge — not a reprimand.
+
+Team member: {display}
+Sprint goal: {sprint_goal}
+Sprint progress: day {days_elapsed} of the sprint, {days_remaining} working days remaining
+
+Their open sprint issues:
+{issues_text}
+
+OKR context:
+{okr_text}
+
+Write a brief, warm Slack message (3–5 sentences) that:
+1. Opens positively — no criticism of their standup
+2. Suggests 2–3 of their open issues to focus on today, ranked by sprint goal alignment
+3. Gently encourages referencing issue numbers in tomorrow's standup so the team has visibility
+
+Strict rules:
+- Tone: supportive colleague, not a manager or bot
+- No bullet lists — write as natural flowing sentences
+- Never use the word "vague" or imply they did something wrong
+- End with one brief encouraging sentence
+- 80–120 words total
+
+Output only the message text. No subject line, no greeting line like "Hi {display},", no preamble.
+"""

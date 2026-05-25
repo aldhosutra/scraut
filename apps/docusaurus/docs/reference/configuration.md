@@ -233,6 +233,39 @@ suggestions:
 
 ---
 
+## `standup_coach`
+
+When enabled, the standup coach runs after the daily summary. It detects team members whose `Today` section is brief and doesn't reference specific issues, then sends each affected person a private Slack DM with personalised task recommendations based on their open sprint issues, the sprint goal, and the team's OKRs.
+
+```yaml
+standup_coach:
+  enabled: false                # Master switch — set to true to activate
+  min_today_words: 20           # Flag Today sections shorter than this word count
+  require_issue_ref: true       # Also flag if no #NN issue reference in Today section
+  skip_sprint_start_days: 1     # Skip coaching for the first N working days of each sprint
+  notify_sm: false              # DM the Scrum Master a summary of who was coached today
+```
+
+| Field | Default | Notes |
+|-------|---------|-------|
+| `enabled` | `false` | Disabled by default — SM opts in |
+| `min_today_words` | `20` | Today sections under this length are candidates for coaching |
+| `require_issue_ref` | `true` | If true, a Today section must also contain a `#NN` issue reference to pass |
+| `skip_sprint_start_days` | `1` | Avoids coaching on sprint day 1, when exploratory work is normal |
+| `notify_sm` | `false` | If true, the SM receives a daily DM listing who was coached (never names individuals in the public channel) |
+
+**Detection is conservative.** A standup is only flagged if the `Today` section is both shorter than `min_today_words` AND (when `require_issue_ref: true`) has no `#NN` reference. Common legitimate vague-but-valid patterns are automatically exempt: code reviews, pairing sessions, sprint ceremonies, OOO, interviews, sick days.
+
+**Delivery is private.** Recommendations go only to the individual's Slack DM — never to the team channel. The optional SM notification also goes as a DM, not to the channel.
+
+**Requires:** `SLACK_BOT_TOKEN` GitHub Secret (for DMs). Without it, coach detection still runs but DMs are skipped with a warning.
+
+:::tip When to enable
+Teams that already have well-labelled sprint backlogs and active Slack usage benefit most. If your backlog is messy or incomplete, the recommendations will be generic. Fix the backlog first, then enable the coach.
+:::
+
+---
+
 ## `paths`
 
 ```yaml

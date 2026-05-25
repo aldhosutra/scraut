@@ -140,3 +140,10 @@ holidays:
                                     # - "2026-12-26"
                                     # - "2026-08-17"
   skip_dates: []                    # API-provided dates your team works anyway (YYYY-MM-DD)
+
+standup_coach:
+  enabled: false                    # Set to true to activate daily standup coaching
+  min_today_words: 20               # Flag Today sections shorter than this word count
+  require_issue_ref: true           # Also flag if no #NN issue reference in Today section
+  skip_sprint_start_days: 1         # Skip coaching for the first N working days of each sprint
+  notify_sm: false                  # DM the Scrum Master a daily summary of who was coached
