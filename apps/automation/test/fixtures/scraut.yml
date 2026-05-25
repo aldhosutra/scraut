@@ -5,6 +5,7 @@ sprint:
   timezone: "Asia/Jakarta"
   capacity_buffer: 0.85
   current_sprint: 1
+  folder_padding: 3
 
 team:
   members:
@@ -68,6 +69,7 @@ portal:
   enabled: false
   title: "Test Dashboard"
   public: false
+  sync_board: false
 
 suggestions:
   enabled: true

@@ -61,13 +61,13 @@ def mock_repo():
 
     # Sprint issues
     repo.add_issue(MockIssue(42, "Auth module refactor", state="closed",
-                              labels=["sprint-01", "story", "sp:5", "in-sprint"]))
+                              labels=["sprint-001", "story", "sp:5", "in-sprint"]))
     repo.add_issue(MockIssue(44, "Redis config setup", state="open",
-                              labels=["sprint-01", "task", "sp:3", "in-sprint", "blocked"]))
+                              labels=["sprint-001", "task", "sp:3", "in-sprint", "blocked"]))
     repo.add_issue(MockIssue(46, "Session management", state="open",
-                              labels=["sprint-01", "story", "sp:5", "in-sprint"]))
+                              labels=["sprint-001", "story", "sp:5", "in-sprint"]))
     repo.add_issue(MockIssue(47, "Payment gateway integration", state="open",
-                              labels=["sprint-01", "story", "sp:8", "in-sprint"]))
+                              labels=["sprint-001", "story", "sp:8", "in-sprint"]))
     repo.add_issue(MockIssue(50, "Backlog item 1", state="open",
                               labels=["story", "sp:3"]))
 

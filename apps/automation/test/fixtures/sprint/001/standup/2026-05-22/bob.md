@@ -1,5 +1,5 @@
 # Standup — Bob
-<!-- Sprint: sprint-01 | Date: 2026-05-22 | Author: bob -->
+<!-- Sprint: sprint-001 | Date: 2026-05-22 | Author: bob -->
 
 ## Yesterday
 - Started issue #47

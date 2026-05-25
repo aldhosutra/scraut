@@ -8,6 +8,7 @@ sprint:
   timezone: "Asia/Jakarta"          # IANA timezone (affects cron schedules)
   capacity_buffer: 0.85             # Plan to 85% of historical velocity (safety)
   current_sprint: 1                 # Auto-incremented by close_sprint.py
+  folder_padding: 3                 # Zero-padding width for sprint folder names (e.g. 3 → sprint/001/)
 
 team:
   members:
@@ -117,6 +118,9 @@ portal:
   title: "Team Dashboard"
   public: true                      # false = private GitHub Pages
   refresh_minutes: 30               # How often board syncs from artifacts
+  sync_board: true                  # Sync GitHub Projects board (requires project_number)
+  project_number:                   # GitHub Projects board number (from URL: .../projects/N)
+                                    # Leave blank to skip board sync; portal HTML always generates
 
 suggestions:
   enabled: true
