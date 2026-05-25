@@ -4,6 +4,10 @@ sidebar_position: 1
 
 # Prerequisites
 
+:::tip New to Scrum?
+If your team is new to Scrum, read the [Scrum Primer](../scrum-primer) before continuing — it explains the ceremonies, roles, artifacts, and the hard rules Scraut is built around.
+:::
+
 Before setting up Scraut, make sure you have the following ready.
 
 ---

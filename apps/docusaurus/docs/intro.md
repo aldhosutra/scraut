@@ -113,4 +113,6 @@ This means **you can always trust what's in `workspace/`** — Scraut never modi
 
 ## Ready to start?
 
-Head to [Prerequisites →](./getting-started/prerequisites)
+**New to Scrum?** Read the [Scrum Primer →](./scrum-primer) first — it covers ceremonies, artifacts, roles, and the hard rules that make Scrum work.
+
+**Already know Scrum?** Head straight to [Prerequisites →](./getting-started/prerequisites)
