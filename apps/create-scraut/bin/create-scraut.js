@@ -75,17 +75,21 @@ const LABELS = [
 // Model defaults per provider
 // ---------------------------------------------------------------------------
 const DEFAULT_MODEL = {
+  github:    'gpt-4o-mini',
+  gemini:    'gemma-4-31b-it',
   anthropic: 'claude-sonnet-4-6',
-  openai: 'gpt-4o',
-  gemini: 'gemini-1.5-pro',
-  ollama: 'llama3',
+  ollama:    'qwen2.5:0.5b',
+  openai:    'gpt-4o',
+  custom:    '',                       // user provides
 };
 
 const LLM_KEY_NAME = {
+  github:    null,                     // GITHUB_TOKEN is auto-provided by Actions
+  gemini:    'GOOGLE_API_KEY',
   anthropic: 'ANTHROPIC_API_KEY',
-  openai: 'OPENAI_API_KEY',
-  gemini: 'GOOGLE_API_KEY',
-  ollama: '(no key needed)',
+  ollama:    null,
+  openai:    'OPENAI_API_KEY',
+  custom:    null,                     // resolved from user input at runtime
 };
 
 // ---------------------------------------------------------------------------
@@ -382,8 +386,50 @@ async function main() {
       type: 'list',
       name: 'llm_provider',
       message: 'LLM provider:',
-      choices: ['anthropic', 'openai', 'gemini', 'ollama'],
+      choices: [
+        {
+          name: 'GitHub Models  — zero setup, GITHUB_TOKEN auto-provided (recommended)',
+          value: 'github',
+        },
+        {
+          name: 'Google Gemini  — free generous tier, 1.5k req/day, add GOOGLE_API_KEY',
+          value: 'gemini',
+        },
+        {
+          name: 'Anthropic      — best reasoning, Claude Sonnet, add ANTHROPIC_API_KEY',
+          value: 'anthropic',
+        },
+        {
+          name: 'Ollama         — fully local, no API key, self-hosted runner',
+          value: 'ollama',
+        },
+        {
+          name: 'Custom         — any OpenAI-compatible endpoint (Groq, DeepSeek, LM Studio…)',
+          value: 'custom',
+        },
+      ],
       default: 0,
+    },
+    {
+      type: 'input',
+      name: 'custom_base_url',
+      message: 'API base URL:',
+      when: (ans) => ans.llm_provider === 'custom',
+      validate: (v) => v.trim().startsWith('http') || 'Must be a valid URL (e.g. https://api.groq.com/openai/v1)',
+    },
+    {
+      type: 'input',
+      name: 'custom_model',
+      message: 'Model name:',
+      when: (ans) => ans.llm_provider === 'custom',
+      validate: (v) => v.trim().length > 0 || 'Model name is required',
+    },
+    {
+      type: 'input',
+      name: 'custom_api_key_name',
+      message: 'GitHub Secret name for API key (leave blank if no auth needed):',
+      default: 'LLM_API_KEY',
+      when: (ans) => ans.llm_provider === 'custom',
     },
     {
       type: 'input',
@@ -458,9 +504,11 @@ async function main() {
     ],
     repos: [],
     llm: {
-      provider: answers.llm_provider,
-      model: DEFAULT_MODEL[answers.llm_provider],
-      base_url: '',
+      provider: answers.llm_provider === 'custom' ? 'openai' : answers.llm_provider,
+      model: answers.llm_provider === 'custom'
+        ? answers.custom_model.trim()
+        : DEFAULT_MODEL[answers.llm_provider],
+      base_url: answers.llm_provider === 'custom' ? answers.custom_base_url.trim() : '',
       max_tokens: 1000,
       cost_controls: { max_daily_tokens: 100000, batch_where_possible: true },
     },
@@ -561,7 +609,9 @@ async function main() {
 
   // ── Step 8: Next steps ───────────────────────────────────────────────────
   const dirNote = argDir ? ` ${argDir}/` : '';
-  const llmKey = LLM_KEY_NAME[answers.llm_provider];
+  const llmKey = answers.llm_provider === 'custom'
+    ? (answers.custom_api_key_name && answers.custom_api_key_name.trim() || null)
+    : LLM_KEY_NAME[answers.llm_provider];
 
   console.log('\n' + chalk.bold('  Done! Next steps:\n'));
 
@@ -577,7 +627,15 @@ async function main() {
   console.log(chalk.dim(`       workspace/sprint/${nn}/standup/${today}/<login>.md\n`));
 
   console.log('  3. ' + chalk.cyan('Set GitHub Secrets') + chalk.dim('  (Settings → Secrets → Actions)'));
-  console.log(`     [ ] ${llmKey}`);
+  if (llmKey) {
+    console.log(`     [ ] ${llmKey}`);
+  } else if (answers.llm_provider === 'github') {
+    console.log(chalk.dim('     ✓  No LLM secret needed — GITHUB_TOKEN is auto-provided by Actions'));
+  } else if (answers.llm_provider === 'ollama') {
+    console.log(chalk.dim('     ✓  No LLM secret needed — Ollama runs on your own infrastructure'));
+  } else {
+    console.log(chalk.dim('     ✓  No API key configured — endpoint requires no auth'));
+  }
   console.log('     [ ] SLACK_WEBHOOK');
   console.log('     [ ] SLACK_BOT_TOKEN\n');
 
