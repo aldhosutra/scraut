@@ -7,7 +7,8 @@ import argparse
 import logging
 from datetime import date, timedelta
 from pathlib import Path
-from scraut.platform.utils.config import load_config, get_workspace_root, get_current_sprint, get_sprint_folder, get_sprint_output_folder, format_sprint_num, get_folder_padding
+from scraut.platform.utils.config import load_config, get_workspace_root, get_current_sprint, get_sprint_folder, get_sprint_output_folder, format_sprint_num, get_folder_padding, get_scraut_root
+from scraut.platform.utils.date_utils import is_working_day
 from scraut.platform.github.api import get_github_client, get_issues, get_sp_from_issue
 
 logging.basicConfig(level=logging.INFO)
@@ -35,10 +36,11 @@ def generate_burndown(sprint_num: int, repo_name: str, config: dict,
         logger.warning("No story points found for sprint. Cannot generate burndown.")
         return None
 
+    scraut_dir = get_scraut_root()
     working_days = []
     current = start
     while current <= end:
-        if current.weekday() < 5:
+        if is_working_day(current, config, scraut_dir):
             working_days.append(current)
         current += timedelta(days=1)
 

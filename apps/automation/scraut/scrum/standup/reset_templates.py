@@ -9,7 +9,8 @@ import logging
 import re
 from datetime import date
 from pathlib import Path
-from scraut.platform.utils.config import load_config, get_workspace_root, get_current_sprint, get_sprint_folder, get_sprint_output_folder, format_sprint_num, get_folder_padding
+from scraut.platform.utils.config import load_config, get_workspace_root, get_current_sprint, get_sprint_folder, get_sprint_output_folder, format_sprint_num, get_folder_padding, get_scraut_root
+from scraut.platform.utils.date_utils import is_working_day
 from scraut.platform.utils.file_utils import create_if_not_exists
 
 YESTERDAY_PLACEHOLDER = re.compile(
@@ -82,9 +83,14 @@ None
 
 
 def reset_templates(config: dict, dry_run: bool = False) -> None:
+    today_date = date.today()
+    if not is_working_day(today_date, config, get_scraut_root()):
+        logger.info(f"Skipping standup reset — {today_date.isoformat()} is a non-working day")
+        return
+
     root = get_workspace_root()
     sprint_num = get_current_sprint()
-    today = date.today().isoformat()
+    today = today_date.isoformat()
 
     standup_dir = get_sprint_folder(sprint_num) / "standup" / today
     standup_dir.mkdir(parents=True, exist_ok=True)

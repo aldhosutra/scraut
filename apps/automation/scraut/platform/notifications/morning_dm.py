@@ -8,7 +8,8 @@ import os
 from datetime import date
 
 from scraut.platform.notifications.slack_post import send_slack_dm
-from scraut.platform.utils.config import get_current_sprint, load_config, format_sprint_num, get_folder_padding
+from scraut.platform.utils.config import get_current_sprint, load_config, format_sprint_num, get_folder_padding, get_scraut_root
+from scraut.platform.utils.date_utils import is_working_day
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
@@ -20,8 +21,13 @@ def _standup_link(repo_name: str, sprint_num: int, today: str, login: str) -> st
 
 
 def send_morning_dms(config: dict, dry_run: bool = False) -> None:
+    today_date = date.today()
+    if not is_working_day(today_date, config, get_scraut_root()):
+        logger.info(f"Skipping morning DMs — {today_date.isoformat()} is a non-working day")
+        return
+
     sprint_num = get_current_sprint()
-    today = date.today().isoformat()
+    today = today_date.isoformat()
     repo_name = os.environ.get("GITHUB_REPOSITORY", "your-org/scraut")
     members = config.get("team", {}).get("members", [])
 
