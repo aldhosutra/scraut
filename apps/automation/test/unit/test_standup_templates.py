@@ -15,7 +15,7 @@ def test_reset_templates_creates_files_for_all_members(scraut_repo, config):
 
     reset_templates(config)
 
-    sprint_dir = scraut_repo / "sprint" / "01" / "standup" / today
+    sprint_dir = scraut_repo / "sprint" / "001" / "standup" / today
     for member in config["team"]["members"]:
         expected = sprint_dir / f"{member['login']}.md"
         assert expected.exists(), f"Expected standup file for {member['login']}"
@@ -28,7 +28,7 @@ def test_reset_templates_does_not_overwrite_existing(scraut_repo, config):
     today = date.today().isoformat()
 
     # Pre-create alice's file with custom content
-    path = scraut_repo / "sprint" / "01" / "standup" / today / "alice.md"
+    path = scraut_repo / "sprint" / "001" / "standup" / today / "alice.md"
     path.parent.mkdir(parents=True, exist_ok=True)
     path.write_text("# Alice's custom standup\n## Yesterday\n- Custom work done")
 
@@ -44,7 +44,7 @@ def test_reset_templates_creates_summary_directory(scraut_repo, config):
     load_config(str(scraut_repo / "scraut.yml"))
     today = date.today().isoformat()
     reset_templates(config)
-    summary_dir = scraut_repo / ".scraut" / "sprint" / "01" / "standup" / "summary"
+    summary_dir = scraut_repo / ".scraut" / "sprint" / "001" / "standup" / "summary"
     assert summary_dir.exists()
 
 
@@ -55,9 +55,9 @@ def test_standup_template_contains_breadcrumb(scraut_repo, config):
     today = date.today().isoformat()
     reset_templates(config)
 
-    path = scraut_repo / "sprint" / "01" / "standup" / today / "alice.md"
+    path = scraut_repo / "sprint" / "001" / "standup" / today / "alice.md"
     content = path.read_text()
-    assert "NAVIGATION" in content or "sprint-01" in content
+    assert "NAVIGATION" in content or "sprint-001" in content
 
 
 @pytest.mark.unit
@@ -67,7 +67,7 @@ def test_standup_template_has_required_sections(scraut_repo, config):
     today = date.today().isoformat()
     reset_templates(config)
 
-    path = scraut_repo / "sprint" / "01" / "standup" / today / "bob.md"
+    path = scraut_repo / "sprint" / "001" / "standup" / today / "bob.md"
     content = path.read_text()
     assert "## Yesterday" in content
     assert "## Today" in content

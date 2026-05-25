@@ -26,7 +26,7 @@ def test_full_standup_flow(scraut_repo, config):
     reset_templates(config)
 
     # Verify standup files exist
-    standup_dir = scraut_repo / "sprint" / "01" / "standup" / target_date
+    standup_dir = scraut_repo / "sprint" / "001" / "standup" / target_date
     assert (standup_dir / "alice.md").exists()
     assert (standup_dir / "bob.md").exists()
 
@@ -46,7 +46,7 @@ def test_full_standup_flow(scraut_repo, config):
             summary = generate_summary(config, target_date, dry_run=False)
 
     # Verify summary was written to summary folder
-    summary_path = scraut_repo / ".scraut" / "sprint" / "01" / "standup" / "summary" / f"{target_date}.md"
+    summary_path = scraut_repo / ".scraut" / "sprint" / "001" / "standup" / "summary" / f"{target_date}.md"
     assert summary_path.exists()
     content = summary_path.read_text()
     assert "BOT-GENERATED" in content

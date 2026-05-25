@@ -17,7 +17,7 @@ def test_blocker_detection_creates_suggestion_file(scraut_repo, config):
 
     # Create enough standup files with blockers to trigger the detector
     for day in ["2026-05-20", "2026-05-21", "2026-05-22", "2026-05-23"]:
-        standup_dir = scraut_repo / "sprint" / "01" / "standup" / day
+        standup_dir = scraut_repo / "sprint" / "001" / "standup" / day
         standup_dir.mkdir(parents=True, exist_ok=True)
         for person in ["alice", "bob"]:
             (standup_dir / f"{person}.md").write_text(

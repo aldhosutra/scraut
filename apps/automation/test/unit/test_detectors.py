@@ -31,7 +31,7 @@ def test_blocker_frequency_triggers_at_threshold(scraut_repo, config):
     load_config(str(scraut_repo / "scraut.yml"))
     # Write multiple standup files with blockers
     for day in ["2026-05-20", "2026-05-21", "2026-05-22"]:
-        standup_dir = scraut_repo / "sprint" / "01" / "standup" / day
+        standup_dir = scraut_repo / "sprint" / "001" / "standup" / day
         standup_dir.mkdir(parents=True, exist_ok=True)
         (standup_dir / "alice.md").write_text(
             f"# Standup\n## Blockers\n- Waiting for PR review on #90\n"
@@ -105,7 +105,7 @@ def test_retro_followthrough_no_action_items(scraut_repo, config):
     from scraut.platform.utils.config import load_config
     load_config(str(scraut_repo / "scraut.yml"))
     # Remove action items from retro summary
-    retro_summary = scraut_repo / "sprint" / "01" / "retrospective" / "summary.md"
+    retro_summary = scraut_repo / "sprint" / "001" / "retrospective" / "summary.md"
     retro_summary.write_text("# Retro Summary\n## Went well\nEverything was great.\n")
     result = retro_followthrough_detector(config, min_missed=1)
     assert result is None
