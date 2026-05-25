@@ -230,6 +230,47 @@ Do not change `paths` unless you are restructuring the repository.
 
 ---
 
+## `holidays`
+
+Controls which days Scraut treats as non-working. Two sources are merged:
+
+1. **Nager.Date API** — automatic public holidays by country (free, no API key)
+2. **Manual overrides** — `extra_dates` adds company/team days; `skip_dates` removes API dates your team works anyway
+
+**Merged rule:** `(api_holidays ∪ extra_dates) − skip_dates`
+
+```yaml
+holidays:
+  country_code: "ID"    # ISO 3166-1 alpha-2 (e.g. US, ID, GB, AU). Blank = no API lookup
+  extra_dates:          # Company/team holidays not covered by the API (YYYY-MM-DD)
+    - "2026-12-26"
+    - "2026-08-17"
+  skip_dates:           # API-provided dates your team works anyway (YYYY-MM-DD)
+    - "2026-01-02"
+```
+
+| Field | Default | Notes |
+|-------|---------|-------|
+| `country_code` | `""` | ISO 3166-1 alpha-2. Leave blank to disable API lookup. |
+| `extra_dates` | `[]` | Additional non-working dates. Useful for company-wide days, bridge days, regional observances not in the API. |
+| `skip_dates` | `[]` | Override API holidays — treat these as normal working days. |
+
+**Effect on Scraut ceremonies:**
+
+| What skips on holidays | What is not affected |
+|------------------------|----------------------|
+| Daily standup template creation | Sprint planning (manual trigger) |
+| Morning Slack DMs | Retrospective / review (manual trigger) |
+| Burndown chart (holidays excluded from ideal line) | Sprint velocity calculations |
+
+**API caching:** Results are cached in `.scraut/holidays/{CC}/{YEAR}.json` on first fetch and reused for all subsequent runs. Delete the file to force a refresh.
+
+:::tip Supported countries
+Nager.Date covers 100+ countries. Check the full list at [date.nager.at/Country](https://date.nager.at/Country).
+:::
+
+---
+
 ## Environment variables reference
 
 All secrets are GitHub repository secrets — never committed to files.
