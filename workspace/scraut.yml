@@ -126,3 +126,11 @@ suggestions:
   enabled: true
   min_evidence_count: 3             # Min pattern occurrences before suggesting
   measurement_sprints: 2            # Sprints after implementation to measure
+
+holidays:
+  country_code: ""                  # ISO 3166-1 alpha-2 (e.g. US, ID, GB, AU)
+                                    # Leave blank to skip the Nager.Date API lookup
+  extra_dates: []                   # Company/team holidays not in the API (YYYY-MM-DD)
+                                    # - "2026-12-26"
+                                    # - "2026-08-17"
+  skip_dates: []                    # API-provided dates your team works anyway (YYYY-MM-DD)

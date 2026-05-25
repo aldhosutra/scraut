@@ -75,3 +75,8 @@ suggestions:
   enabled: true
   min_evidence_count: 3
   measurement_sprints: 2
+
+holidays:
+  country_code: ""
+  extra_dates: []
+  skip_dates: []
