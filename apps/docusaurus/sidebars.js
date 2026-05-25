@@ -73,11 +73,17 @@ const sidebars = {
       items: [
         'reference/cli',
         'reference/configuration',
+        'reference/team-roles',
         'reference/workflows',
         'reference/file-structure',
         'reference/llm-providers',
         'reference/labels',
       ],
+    },
+    {
+      type: 'doc',
+      id: 'faq',
+      label: 'FAQ',
     },
   ],
 };

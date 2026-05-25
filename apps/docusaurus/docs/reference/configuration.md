@@ -38,15 +38,28 @@ team:
   members:
     - login: string        # required — exact GitHub username
       display: string      # required — human-readable name
-      role: string         # required — developer | product_owner | scrum_master
+      role: string         # optional — developer | product_owner | scrum_master
       slack_id: string     # optional — Slack member ID for morning DMs
       email: string        # optional — email for weekly digest
-  product_owner: string    # required — login of the PO
-  scrum_master: string     # required — login of the SM
+  product_owner: string    # optional — login of the PO (informational)
+  scrum_master: string     # optional — login of the SM (informational)
   slack_channel: string    # required — e.g. "#scraut-bot"
 ```
 
-`product_owner` and `scrum_master` do not need to be in `members` (for external stakeholders), but typically are.
+| Field | Required? | Notes |
+|-------|-----------|-------|
+| `members[].login` | Yes | Exact GitHub username — used for standup file paths |
+| `members[].display` | Yes | Human-readable name shown in summaries and reports |
+| `members[].role` | No | Informational label in LLM prompts; does not gate any action |
+| `members[].slack_id` | No | Required for morning DMs; silently skipped if absent |
+| `members[].email` | No | Required for weekly email digest; skipped if absent |
+| `product_owner` | No | Informational — not read by any current workflow |
+| `scrum_master` | No | Informational — not read by any current workflow |
+| `slack_channel` | Yes | Channel for all ceremony posts (e.g. `#scraut-bot`) |
+
+:::note Role fields are informational
+`product_owner`, `scrum_master`, and `members[].role` do not currently change what automation runs. Any team member with repo write access can trigger any workflow. The fields exist as documentation of intent and as a foundation for future role-based routing. **They can all be set to the same person** — common for small teams and solo setups.
+:::
 
 ---
 

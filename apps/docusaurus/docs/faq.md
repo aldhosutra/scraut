@@ -1,0 +1,197 @@
+---
+sidebar_position: 99
+---
+
+# FAQ
+
+Common questions about setting up and using Scraut.
+
+---
+
+## Setup
+
+### Can the product owner and scrum master be the same person?
+
+Yes. Set both to the same GitHub login:
+
+```yaml
+team:
+  product_owner: alice
+  scrum_master: alice
+```
+
+Neither field currently changes what automation runs — they are informational labels stored in the config. See [Team Roles](./reference/team-roles) for full details.
+
+### Do the `product_owner` and `scrum_master` fields affect automation?
+
+No. All 28 workflows treat every team member the same. Any person with repository write access can trigger any ceremony. The fields exist as documentation of intent and as a foundation for future role-based routing. See [Team Roles](./reference/team-roles).
+
+### Can I use Scraut with a team of one?
+
+Yes. Set all role fields to your own login, add yourself as the only member, and run normally. Standup summaries, retro synthesis, and all automations work with a single-member team.
+
+### Do I need a GitHub Projects board?
+
+No. Scraut can create and sync a GitHub Projects board for the visibility portal, but the text files in `workspace/` are the source of truth. The board is a derived view. All planning, standup, and reporting workflows read from text files, not the board.
+
+### What LLM do I need?
+
+Any of: Anthropic Claude, OpenAI GPT-4o, Google Gemini, Ollama (local), or any OpenAI-compatible endpoint. You only need one. See [LLM Providers](./reference/llm-providers) for setup details.
+
+---
+
+## Team management
+
+### How do I add a team member mid-sprint?
+
+1. Add them to `team.members` in `workspace/scraut.yml`
+2. Create their standup file for today:
+   ```
+   workspace/sprint/NN/standup/YYYY-MM-DD/newmember.md
+   ```
+3. Create their retro file:
+   ```
+   workspace/sprint/NN/retrospective/newmember.md
+   ```
+4. Commit and push — they're now included in all subsequent summaries
+
+### How do I remove a team member?
+
+Remove their entry from `team.members` in `scraut.yml`. Their historical standup and retro files remain intact (never deleted by automation). Future ceremony runs will not include them.
+
+### What happens if a team member doesn't submit a standup?
+
+The standup summary workflow runs when anyone pushes to a standup file. If a member hasn't pushed, their file either doesn't exist for that day or still contains the template. The LLM summarises only the files that exist — missing submitters are not mentioned in the summary. There is no automated reminder beyond the morning DM.
+
+### Can team members be in different timezones?
+
+Yes, but all scheduled workflows run on a single timezone configured in `scraut.yml`:
+
+```yaml
+sprint:
+  timezone: "UTC"
+```
+
+Morning DMs fire at 7:55am in this timezone. If your team spans multiple timezones, set the timezone to where most members are, or to UTC, and members in other zones adjust individually.
+
+---
+
+## Workflows
+
+### Who can trigger manual workflows?
+
+Any GitHub user with write access to the repository. The manually-triggered ceremonies (sprint planning, review, retrospective, milestone planning) are `workflow_dispatch` workflows accessible from the Actions tab. There is no built-in role check.
+
+### What does `[skip ci]` mean in commit messages?
+
+It tells GitHub Actions not to trigger workflows on that commit. Scraut bot commits always include `[skip ci]` to prevent infinite loops where a bot commit triggers a workflow that makes another bot commit.
+
+Your own commits should NOT include `[skip ci]` unless you specifically want to skip automation — for example, when committing workspace setup files that don't need immediate processing.
+
+### A workflow failed — where do I look?
+
+1. Go to the **Actions** tab in your repository
+2. Click the failed run
+3. Expand the failed step to see the error output
+4. Common causes:
+   - Missing secret (e.g. `ANTHROPIC_API_KEY` not set)
+   - LLM rate limit or quota exceeded
+   - `scraut.yml` parse error (check YAML syntax)
+   - Missing `workspace/` files the script expected
+
+### Can I disable a specific ceremony?
+
+Yes. Set the ceremony to `false` in `scraut.yml`:
+
+```yaml
+ceremonies:
+  estimation: false   # disables emoji-based story point voting
+  grooming: false     # disables Wednesday backlog grooming
+```
+
+The corresponding workflow still exists in `.github/workflows/` but its scripts check this flag at the start and exit cleanly if disabled.
+
+### Why isn't my morning DM arriving?
+
+Morning DMs require:
+1. `SLACK_BOT_TOKEN` secret set (different from `SLACK_WEBHOOK`)
+2. `slack_id` set for each member in `scraut.yml`
+3. `notifications.morning_dm: true` in `scraut.yml`
+4. The Slack bot invited to the workspace
+
+Channel posts only need `SLACK_WEBHOOK`. DMs to individuals need the bot token.
+
+---
+
+## Configuration
+
+### Can I change the sprint length after starting?
+
+Yes. Update `sprint.length_days` in `scraut.yml`. The change takes effect at the next sprint. Ongoing sprint files and dates are not altered.
+
+### Where do I put API keys and secrets?
+
+Never in `scraut.yml`. Always in **Settings → Secrets and variables → Actions** in your GitHub repository. The `slack_webhook` field in `scraut.yml` should always be left empty — use the `SLACK_WEBHOOK` secret.
+
+### Can I use a self-hosted LLM?
+
+Yes. Set `llm.base_url` to any OpenAI-compatible endpoint:
+
+```yaml
+llm:
+  provider: openai
+  model: your-model-name
+  base_url: "http://localhost:11434/v1"   # LM Studio, Ollama, etc.
+```
+
+See [LLM Providers](./reference/llm-providers) for examples.
+
+---
+
+## Files and data
+
+### What's the difference between `workspace/` and `.scraut/`?
+
+| | `workspace/` | `.scraut/` |
+|---|---|---|
+| Written by | Humans | Bots (GitHub Actions) |
+| Edit manually? | Yes — this is the source of truth | Never — always regenerated |
+| Commits by | Team members | Bot with `[skip ci]` |
+| Examples | Standup files, retro files, `scraut.yml` | Summaries, reviews, insights |
+
+### Can I edit files in `.scraut/`?
+
+You can, but changes will be overwritten the next time the relevant workflow runs. `.scraut/` is bot-generated output, not a source of truth. If you want to preserve something from `.scraut/`, copy it to `workspace/`.
+
+### What happens to `workspace/` files when I upgrade Scraut?
+
+Nothing. `workspace/` is human-controlled and Scraut automation never deletes or overwrites human-authored files. Upgrades (`git merge upstream/main`) bring in new workflows and scripts without touching your team's data.
+
+---
+
+## Agent Mode
+
+### Do I need Agent Mode?
+
+No. Agent Mode is optional. The full Scrum automation system (standups, planning, retros, milestones, velocity) works entirely without agents. Agents are an enhancement that adds AI team members who claim issues and write code.
+
+### Can I enable one agent without enabling all of them?
+
+Yes. Each agent has its own `enabled` flag:
+
+```yaml
+agents:
+  enabled: true
+  roles:
+    - id: agent-backend
+      enabled: true
+    - id: agent-frontend
+      enabled: false   # this one stays off
+```
+
+---
+
+## Still stuck?
+
+- Check the [full documentation](https://aldhosutra.github.io/scraut/)
+- Open an issue at [github.com/aldhosutra/scraut/issues](https://github.com/aldhosutra/scraut/issues)

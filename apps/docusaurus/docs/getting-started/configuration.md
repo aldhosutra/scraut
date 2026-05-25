@@ -25,7 +25,7 @@ team:
   members:
     - login: alice          # GitHub username (exact case match)
       display: Alice Smith  # Human-readable name shown in summaries
-      role: developer       # developer | product_owner | scrum_master
+      role: developer       # developer | product_owner | scrum_master — informational only
       slack_id: U0123456789 # Slack member ID (for morning DMs — see below)
       email: alice@example.com # For weekly email digest
     - login: bob
@@ -33,8 +33,8 @@ team:
       role: developer
       slack_id: U9876543210
       email: bob@example.com
-  product_owner: alice      # Login of PO (gets backlog approval step)
-  scrum_master: bob         # Login of SM (gets suggestion system alerts)
+  product_owner: alice      # Informational — not used by automation today
+  scrum_master: bob         # Informational — not used by automation today
   slack_channel: "#scraut-bot" # Main channel for ceremony posts
 
 ceremonies:
@@ -94,6 +94,32 @@ paths:
   scraut: .scraut           # Root for bot-generated files
   portal: apps/portal       # Portal application path
 ```
+
+---
+
+## Team roles
+
+Scraut has three configurable role fields in the `team` section: `members[].role`, `product_owner`, and `scrum_master`.
+
+**Important: none of these fields currently change what automation runs.** All 28 workflows treat every team member the same — standup summaries include everyone, planning considers the full team, and any member with repo write access can manually trigger ceremonies from the Actions tab.
+
+The fields exist as documentation of intent inside the config file, and as a foundation for future role-based features (routing escalations, priority decisions, etc.).
+
+### `product_owner` and `scrum_master`
+
+These fields accept a GitHub login. They can be:
+
+- **Different people** — the typical Scrum setup
+- **The same person** — works perfectly for small teams or solo founders running Scrum-of-one:
+  ```yaml
+  product_owner: alice
+  scrum_master: alice
+  ```
+- **A person not in `members`** — allowed if your PO or SM is an external stakeholder who doesn't participate in standups
+
+### `members[].role`
+
+The `role` field on each team member (`developer`, `product_owner`, `scrum_master`) is purely a label used in LLM prompt context and generated summaries. It does not gate any action or notification.
 
 ---
 
