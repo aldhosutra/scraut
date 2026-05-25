@@ -56,6 +56,7 @@ const sidebars = {
         'features/issue-triage',
         'features/visibility-portal',
         'features/suggestions',
+        'features/standup-coach',
         'features/notifications',
         'features/repo-sync',
         'features/incidents',
