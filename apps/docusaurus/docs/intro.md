@@ -64,24 +64,27 @@ Scraut flips this model. Your team edits simple Markdown files directly in GitHu
 
 ## Key features
 
-| Feature | What it does |
-|---------|-------------|
-| **Daily Standup** | Team edits Markdown; bot summarises and posts to Slack |
-| **Sprint Planning** | AI generates planning PR from backlog + capacity |
-| **Sprint Review** | Automatic review document from closed issues |
-| **Retrospective** | AI synthesises per-person retros into team themes |
-| **Backlog Grooming** | AI prioritises unlabelled issues mid-sprint |
-| **Velocity Tracking** | Calculates and tracks story point velocity |
-| **Milestone Planning** | Decomposes milestones into epics; generates health forecasts |
-| **Visibility Portal** | GitHub Pages dashboard synced from text files |
-| **Suggestions System** | Detects recurring pain points; proposes process changes |
-| **Morning Notifications** | DMs each team member their standup link at 7:55 am |
-| **Weekly Digest** | Sends stakeholder digest every Monday |
-| **Repo Sync** | Pulls code activity from connected repos into standup context |
-| **Incident to Backlog** | Converts incident action items to GitHub issues |
-| **Issue Triage** | Auto-labels and triages new issues |
-| **Definition of Done** | Checks DoD criteria when issues close |
-| **Agent Mode** | Fully autonomous AI agents that implement tasks |
+| Feature | How it starts | What it does |
+|---------|--------------|-------------|
+| **Morning Notifications** | ⏱️ 7:55 AM weekdays | DMs each team member their standup link |
+| **Daily Standup** | ⚡ Push to standup file | Bot summarises all standups and posts to Slack |
+| **Issue Triage** | ⚡ New issue opened | Auto-labels type and priority with LLM |
+| **PR Enrichment** | ⚡ PR opened | Fills PR description with acceptance criteria |
+| **Definition of Done** | ⚡ Issue closed | Checks DoD criteria against linked PRs |
+| **Backlog Grooming** | ⏱️ Every Wednesday | AI prioritises unlabelled issues mid-sprint |
+| **Velocity Tracking** | ⚡ After sprint review | Calculates and tracks story point velocity |
+| **Visibility Portal** | ⏱️ Every 30 minutes | GitHub Pages dashboard synced from text files |
+| **Milestone Planning** | ⚡ Push to milestone file | Decomposes milestones; generates health forecasts |
+| **Incident to Backlog** | ⚡ Push action-items.md | Converts incident action items to GitHub issues |
+| **Weekly Digest** | ⏱️ Monday 8:00 AM | Sends stakeholder summary to Slack + email |
+| **Suggestions System** | ⚡ After sprint review | Detects recurring pain points; proposes improvements |
+| **Repo Sync** | ⏱️ Daily 8:00 AM | Pulls code activity from connected repos |
+| **Sprint Planning** | 🖱️ SM triggers manually | AI generates planning PR from backlog + capacity |
+| **Sprint Review** | 🖱️ SM triggers manually | Review document from closed issues |
+| **Retrospective** | 🖱️ SM triggers manually | AI synthesises per-person retros into team themes |
+| **Agent Mode** | ⏱️ Every 4 hours | Fully autonomous AI agents that implement tasks |
+
+**Key:** ⏱️ Scheduled &nbsp;·&nbsp; ⚡ Triggered by a GitHub event &nbsp;·&nbsp; 🖱️ SM triggers from Actions tab
 
 ---
 

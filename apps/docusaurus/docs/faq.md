@@ -104,9 +104,21 @@ Morning DMs fire at 7:55am in this timezone. If your team spans multiple timezon
 
 ## Workflows
 
+### Which workflows are automatic and which need manual triggering?
+
+**Three workflows require manual triggering** from Actions → [workflow name] → Run workflow:
+
+| Workflow | When |
+|----------|------|
+| **Sprint Planning** | Start of each sprint |
+| **Sprint Review** | End of each sprint |
+| **Sprint Retrospective** | End of each sprint (after review) |
+
+**Everything else is automatic** — scheduled by cron or triggered by GitHub events (issue opened, PR merged, push to standup files, etc.). See the [Workflows reference](./reference/workflows) for the full breakdown.
+
 ### Who can trigger manual workflows?
 
-Any GitHub user with write access to the repository. The manually-triggered ceremonies (sprint planning, review, retrospective, milestone planning) are `workflow_dispatch` workflows accessible from the Actions tab. There is no built-in role check.
+Any GitHub user with write access to the repository. The manually-triggered ceremonies are `workflow_dispatch` workflows accessible from the Actions tab. There is no built-in role check.
 
 ### What does `[skip ci]` mean in commit messages?
 

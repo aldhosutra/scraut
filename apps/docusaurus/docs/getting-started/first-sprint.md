@@ -178,17 +178,56 @@ The team opens their standup files (via the link or `scraut standup`), fills the
 
 ## What's automated from here
 
-Once Sprint 1 starts, Scraut runs on autopilot:
+Once Sprint 1 starts, Scraut runs on autopilot for everything during the sprint:
 
 | When | What Scraut does automatically |
 |------|-------------------------------|
-| Every weekday 7:55 am | Sends morning standup DM to each member |
-| Every weekday 9:00 am | Summarises standups → `.scraut/sprint/01/standup/summary/` → posts to Slack |
-| Every Wednesday | Backlog grooming — prioritises unlabelled issues, checks scope creep |
-| When any issue closes | Checks Definition of Done |
-| When a PR opens | Auto-generates PR description from linked issues |
-| Every 30 minutes | Syncs board state from text files |
-| After sprint review | Detects recurring patterns → creates suggestions |
-| Every Monday | Sends weekly stakeholder digest |
+| ⏱️ Every weekday ~2:00 AM | Creates today's standup file for each member |
+| ⏱️ Every weekday 7:55 AM | Sends morning standup DM to each member |
+| ⏱️ Every weekday 9:00 AM | Summarises standups → `.scraut/sprint/01/standup/summary/` → posts to Slack |
+| ⚡ When a new issue opens | Labels type and priority with LLM |
+| ⚡ When a PR opens | Fills PR description from linked issue acceptance criteria |
+| ⚡ When a PR merges | Closes linked sprint issues, triggers DoD check |
+| ⚡ When an issue closes | Checks Definition of Done criteria |
+| ⏱️ Every Wednesday | Backlog grooming — prioritises unlabelled issues, checks scope creep |
+| ⏱️ Every 30 minutes | Syncs board state from text files |
+| ⏱️ Every Monday | Sends weekly stakeholder digest |
 
-You just need to commit your standup files every morning.
+Your team's only job during the sprint: **commit your standup file each morning.**
+
+---
+
+## End of sprint — manual steps required
+
+Three ceremonies at the end of each sprint require the Scrum Master to trigger them manually from the **Actions** tab:
+
+:::warning These do not run automatically
+Sprint Review, Sprint Retrospective, and the next Sprint Planning must be triggered by the SM. They mark deliberate sprint boundaries.
+:::
+
+**Step 1 — Sprint Review** (SM triggers)
+
+Go to **Actions → Scraut — Sprint Review → Run workflow**
+
+Fill in:
+- Sprint number: `1`
+- org/repo: `myorg/my-repo`
+
+This generates `.scraut/sprint/01/review/sprint-review.md` from closed issues, increments `current_sprint` in `scraut.yml`, and automatically kicks off suggestion detection.
+
+**Step 2 — Sprint Retrospective** (SM triggers)
+
+Go to **Actions → Scraut — Sprint Retrospective → Run workflow**
+
+Ask each team member to fill in their retro file first:
+```
+workspace/sprint/01/retrospective/<login>.md
+```
+
+Then trigger the workflow with sprint number `1`. It synthesises all per-member retros into a team themes document.
+
+**Step 3 — Next Sprint Planning** (SM triggers, start of new sprint)
+
+Go to **Actions → Scraut — Sprint Planning → Run workflow**
+
+Fill in the new sprint number (`2`, `3`, etc.). This creates the next sprint folder, opens a new planning PR, and the cycle repeats.
