@@ -3,6 +3,7 @@ lib/utils/date_utils.py
 Sprint date calculations and scheduling utilities.
 """
 from datetime import date, timedelta, datetime
+from pathlib import Path
 from typing import Optional
 import pytz
 
@@ -21,43 +22,62 @@ def get_sprint_dates(sprint_num: int, config: dict) -> tuple[date, date]:
     return start, end
 
 
-def working_days_remaining(end_date: date) -> int:
-    """Count working days (Mon-Fri) between today and end_date."""
+def is_working_day(d: Optional[date] = None,
+                   config: Optional[dict] = None,
+                   scraut_root: Optional[Path] = None) -> bool:
+    """Return True if d is a working day (weekday and not a holiday).
+
+    Pass config to enable holiday awareness. Without config only weekends
+    are excluded, preserving backward compatibility for callers that don't
+    have config available.
+    """
+    if d is None:
+        d = date.today()
+    if d.weekday() >= 5:
+        return False
+    if config and config.get("holidays"):
+        from scraut.platform.utils.holiday_utils import is_holiday
+        return not is_holiday(d, config, scraut_root)
+    return True
+
+
+# Backward-compatible alias
+is_weekday = is_working_day
+
+
+def working_days_remaining(end_date: date,
+                            config: Optional[dict] = None,
+                            scraut_root: Optional[Path] = None) -> int:
+    """Count working days (Mon–Fri, minus holidays) between today and end_date."""
     today = date.today()
     count = 0
     current = today
     while current <= end_date:
-        if current.weekday() < 5:  # Monday=0, Friday=4
+        if is_working_day(current, config, scraut_root):
             count += 1
         current += timedelta(days=1)
     return count
 
 
-def days_until_sprint_end(end_date: date) -> int:
+def days_until_sprint_end(end_date: date,
+                           config: Optional[dict] = None,
+                           scraut_root: Optional[Path] = None) -> int:
     """Alias for working_days_remaining — named per CLAUDE.md convention."""
-    return working_days_remaining(end_date)
+    return working_days_remaining(end_date, config, scraut_root)
 
 
-def working_days_elapsed(start_date: date) -> int:
+def working_days_elapsed(start_date: date,
+                          config: Optional[dict] = None,
+                          scraut_root: Optional[Path] = None) -> int:
     """Count working days from start_date to today."""
     today = date.today()
     count = 0
     current = start_date
     while current < today:
-        if current.weekday() < 5:
+        if is_working_day(current, config, scraut_root):
             count += 1
         current += timedelta(days=1)
     return count
-
-
-def is_weekday(d: Optional[date] = None) -> bool:
-    if d is None:
-        d = date.today()
-    return d.weekday() < 5
-
-
-# Alias per CLAUDE.md convention
-is_working_day = is_weekday
 
 
 def localize_time(naive_dt: datetime, timezone_str: str) -> datetime:
