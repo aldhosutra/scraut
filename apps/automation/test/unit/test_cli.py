@@ -22,11 +22,12 @@ def _init_input(
     sm="bob",
     channel="#scraut-bot",
     sprint_days="14",
+    starting_sprint="1",
     timezone="UTC",
     provider="anthropic",
     slack_webhook="",
 ):
-    return "\n".join([repo, team, po, sm, channel, sprint_days, timezone, provider, slack_webhook])
+    return "\n".join([repo, team, po, sm, channel, sprint_days, starting_sprint, timezone, provider, slack_webhook])
 
 
 @pytest.mark.unit
@@ -249,6 +250,47 @@ class TestInitCommand:
         monkeypatch.delenv("GITHUB_TOKEN", raising=False)
         result = CliRunner().invoke(cli, ["init"], input=_init_input())
         assert "standup" in result.output.lower()
+
+    def test_starting_sprint_default_is_one(self, tmp_path, monkeypatch):
+        monkeypatch.chdir(tmp_path)
+        monkeypatch.delenv("GITHUB_TOKEN", raising=False)
+        CliRunner().invoke(cli, ["init"], input=_init_input(starting_sprint="1"))
+        cfg = yaml.safe_load((tmp_path / "workspace" / "scraut.yml").read_text())
+        assert cfg["sprint"]["current_sprint"] == 1
+        assert (tmp_path / "workspace" / "sprint" / "01").exists()
+
+    def test_starting_sprint_midteam_uses_correct_folder(self, tmp_path, monkeypatch):
+        monkeypatch.chdir(tmp_path)
+        monkeypatch.delenv("GITHUB_TOKEN", raising=False)
+        CliRunner().invoke(cli, ["init"], input=_init_input(starting_sprint="5"))
+        cfg = yaml.safe_load((tmp_path / "workspace" / "scraut.yml").read_text())
+        assert cfg["sprint"]["current_sprint"] == 5
+        assert (tmp_path / "workspace" / "sprint" / "05").exists()
+        assert not (tmp_path / "workspace" / "sprint" / "01").exists()
+
+    def test_starting_sprint_midteam_standup_in_correct_folder(self, tmp_path, monkeypatch):
+        monkeypatch.chdir(tmp_path)
+        monkeypatch.delenv("GITHUB_TOKEN", raising=False)
+        from datetime import date
+        today = date.today().isoformat()
+        CliRunner().invoke(cli, ["init"], input=_init_input(team="alice", starting_sprint="5"))
+        standup = tmp_path / "workspace" / "sprint" / "05" / "standup" / today / "alice.md"
+        assert standup.exists()
+        assert "sprint-05" in standup.read_text()
+
+    def test_starting_sprint_midteam_retro_in_correct_folder(self, tmp_path, monkeypatch):
+        monkeypatch.chdir(tmp_path)
+        monkeypatch.delenv("GITHUB_TOKEN", raising=False)
+        CliRunner().invoke(cli, ["init"], input=_init_input(team="alice", starting_sprint="12"))
+        retro = tmp_path / "workspace" / "sprint" / "12" / "retrospective" / "alice.md"
+        assert retro.exists()
+        assert "Sprint 12" in retro.read_text()
+
+    def test_starting_sprint_output_shows_correct_sprint(self, tmp_path, monkeypatch):
+        monkeypatch.chdir(tmp_path)
+        monkeypatch.delenv("GITHUB_TOKEN", raising=False)
+        result = CliRunner().invoke(cli, ["init"], input=_init_input(starting_sprint="7"))
+        assert "Sprint 7" in result.output or "sprint/07" in result.output
 
 
 def _make_scraut_yml(tmp_path, members=None, sprint=1):

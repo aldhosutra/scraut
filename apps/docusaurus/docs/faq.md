@@ -30,6 +30,22 @@ No. All 28 workflows treat every team member the same. Any person with repositor
 
 Yes. Set all role fields to your own login, add yourself as the only member, and run normally. Standup summaries, retro synthesis, and all automations work with a single-member team.
 
+### We're already on sprint 5 — do we have to start over at sprint 1?
+
+No. Both setup wizards ask "Starting sprint number" and default to 1. Enter your current sprint number instead:
+
+```
+Starting sprint number (1 for a brand-new team): 5
+```
+
+The wizard will:
+- Set `current_sprint: 5` in `scraut.yml`
+- Scaffold `workspace/sprint/05/` (not `sprint/01/`)
+- Create today's standup files and retro templates for sprint 5
+- All subsequent automation — standup summaries, grooming, planning — works against sprint 5
+
+If you're mid-sprint (not starting fresh), you can skip triggering sprint-planning and just let the daily automation pick up. Trigger it at your next sprint boundary.
+
 ### Do I need a GitHub Projects board?
 
 No. Scraut can create and sync a GitHub Projects board for the visibility portal, but the text files in `workspace/` are the source of truth. The board is a derived view. All planning, standup, and reporting workflows read from text files, not the board.

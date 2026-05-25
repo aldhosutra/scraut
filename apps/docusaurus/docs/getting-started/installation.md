@@ -52,6 +52,7 @@ The wizard detects it's already inside a Scraut repository and skips the clone s
   ❯ 2 weeks (14 days)
     1 week  (7 days)
     3 weeks (21 days)
+  Starting sprint number (1 for a brand-new team): 1
   Timezone (IANA format, e.g. UTC, Asia/Jakarta): Asia/Jakarta
   LLM provider:
   ❯ anthropic

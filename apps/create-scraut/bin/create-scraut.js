@@ -387,12 +387,24 @@ async function main() {
     },
     {
       type: 'input',
+      name: 'starting_sprint',
+      message: 'Starting sprint number (1 for a brand-new team):',
+      default: '1',
+      validate: (v) => {
+        const n = parseInt(v, 10);
+        return (Number.isInteger(n) && n >= 1) || 'Must be a positive integer (e.g. 1, 5, 12)';
+      },
+    },
+    {
+      type: 'input',
       name: 'slack_webhook',
       message: 'Slack webhook URL (Enter to skip):',
       default: '',
     },
   ]);
 
+  const startingSprint = parseInt(answers.starting_sprint, 10);
+  const nn = String(startingSprint).padStart(2, '0');
   const logins = answers.team.split(',').map((l) => l.trim()).filter(Boolean);
   const members = logins.map((login) => ({
     login,
@@ -410,7 +422,7 @@ async function main() {
       start_time: '09:00',
       timezone: answers.timezone,
       capacity_buffer: 0.85,
-      current_sprint: 1,
+      current_sprint: startingSprint,
     },
     team: {
       members,
@@ -465,12 +477,12 @@ async function main() {
   const workspaceDirs = [
     'workspace/team', 'workspace/okr', 'workspace/customer',
     'workspace/knowledge', 'workspace/milestones',
-    'workspace/sprint/01/standup', 'workspace/sprint/01/retrospective',
-    'workspace/sprint/01/grooming', 'workspace/sprint/01/decisions', 'workspace/sprint/01/adr',
+    `workspace/sprint/${nn}/standup`, `workspace/sprint/${nn}/retrospective`,
+    `workspace/sprint/${nn}/grooming`, `workspace/sprint/${nn}/decisions`, `workspace/sprint/${nn}/adr`,
   ];
   const scrautDirs = [
-    '.scraut/sprint/01/standup/summary', '.scraut/sprint/01/review',
-    '.scraut/sprint/01/code', '.scraut/sprint/01/incidents',
+    `.scraut/sprint/${nn}/standup/summary`, `.scraut/sprint/${nn}/review`,
+    `.scraut/sprint/${nn}/code`, `.scraut/sprint/${nn}/incidents`,
     '.scraut/insights', '.scraut/milestones',
     '.scraut/suggestions/active', '.scraut/suggestions/implemented', '.scraut/suggestions/resolved',
   ];
@@ -487,14 +499,14 @@ async function main() {
   const teamNames = members.map(m => m.display).join(', ');
 
   for (const member of members) {
-    const standupDir = `workspace/sprint/01/standup/${today}`;
+    const standupDir = `workspace/sprint/${nn}/standup/${today}`;
     writeIfMissing(`${standupDir}/${member.login}.md`,
-      standupTemplate(member.display, member.login, 1, today));
-    writeIfMissing(`workspace/sprint/01/retrospective/${member.login}.md`,
-      retroTemplate(member.display, 1));
+      standupTemplate(member.display, member.login, startingSprint, today));
+    writeIfMissing(`workspace/sprint/${nn}/retrospective/${member.login}.md`,
+      retroTemplate(member.display, startingSprint));
   }
-  writeIfMissing('workspace/sprint/01/meta.md', metaTemplate(teamNames));
-  writeIfMissing('workspace/sprint/01/grooming/backlog-ideas.md',
+  writeIfMissing(`workspace/sprint/${nn}/meta.md`, metaTemplate(teamNames));
+  writeIfMissing(`workspace/sprint/${nn}/grooming/backlog-ideas.md`,
     '# Backlog Ideas\n<!-- Append new ideas below. Anyone can add. -->\n\n');
   writeIfMissing('workspace/team/capacity.md', capacityTemplate(members));
   writeIfMissing('workspace/okr/okr.md', OKR_TEMPLATE);
@@ -545,7 +557,7 @@ async function main() {
   console.log(chalk.dim('       Add slack_id and email for each team member.\n'));
 
   console.log(`  2. ` + chalk.cyan("Fill in today's standup"));
-  console.log(chalk.dim(`       workspace/sprint/01/standup/${today}/<login>.md\n`));
+  console.log(chalk.dim(`       workspace/sprint/${nn}/standup/${today}/<login>.md\n`));
 
   console.log('  3. ' + chalk.cyan('Set GitHub Secrets') + chalk.dim('  (Settings → Secrets → Actions)'));
   console.log(`     [ ] ${llmKey}`);

@@ -379,6 +379,7 @@ def init():
     sm = click.prompt("Scrum master login", default=logins[0] if logins else "")
     channel = click.prompt("Slack channel", default="#scraut-bot")
     sprint_days = click.prompt("Sprint length in days", default=14, type=int)
+    starting_sprint = click.prompt("Starting sprint number (1 if brand-new team)", default=1, type=int)
     timezone = click.prompt("Timezone (IANA format, e.g. UTC, Asia/Jakarta)", default="UTC")
     provider = click.prompt(
         "LLM provider",
@@ -414,7 +415,7 @@ def init():
             "start_time": "09:00",
             "timezone": timezone,
             "capacity_buffer": 0.85,
-            "current_sprint": 1,
+            "current_sprint": starting_sprint,
         },
         "team": {
             "members": members,
@@ -466,11 +467,13 @@ def init():
         yaml.dump(config, f, default_flow_style=False, sort_keys=False, allow_unicode=True)
     click.echo(f"\n  created  workspace/scraut.yml")
 
+    nn = f"{starting_sprint:02d}"
+
     # Workspace directories
     for d in [
         "team", "okr", "customer", "knowledge", "milestones",
-        "sprint/01/standup", "sprint/01/retrospective",
-        "sprint/01/grooming", "sprint/01/decisions", "sprint/01/adr",
+        f"sprint/{nn}/standup", f"sprint/{nn}/retrospective",
+        f"sprint/{nn}/grooming", f"sprint/{nn}/decisions", f"sprint/{nn}/adr",
     ]:
         p = workspace / d
         p.mkdir(parents=True, exist_ok=True)
@@ -478,8 +481,8 @@ def init():
     # .scraut directories (bot-generated output)
     scraut_root = Path(".scraut")
     for d in [
-        "sprint/01/standup/summary", "sprint/01/review",
-        "sprint/01/code", "sprint/01/incidents",
+        f"sprint/{nn}/standup/summary", f"sprint/{nn}/review",
+        f"sprint/{nn}/code", f"sprint/{nn}/incidents",
         "insights", "milestones",
         "suggestions/active", "suggestions/implemented", "suggestions/resolved",
     ]:
@@ -500,26 +503,26 @@ def init():
         login = member["login"]
         display = member["display"]
 
-        standup_dir = workspace / "sprint" / "01" / "standup" / today
+        standup_dir = workspace / "sprint" / nn / "standup" / today
         standup_dir.mkdir(parents=True, exist_ok=True)
         standup_file = standup_dir / f"{login}.md"
         if not standup_file.exists():
             standup_file.write_text(_STANDUP_TEMPLATE.format(
-                display_name=display, sprint_num=1, date=today, login=login,
+                display_name=display, sprint_num=starting_sprint, date=today, login=login,
             ))
 
-        retro_dir = workspace / "sprint" / "01" / "retrospective"
+        retro_dir = workspace / "sprint" / nn / "retrospective"
         retro_file = retro_dir / f"{login}.md"
         if not retro_file.exists():
             retro_file.write_text(_RETRO_TEMPLATE.format(
-                display_name=display, sprint_num=1,
+                display_name=display, sprint_num=starting_sprint,
             ))
 
-    meta_file = workspace / "sprint" / "01" / "meta.md"
+    meta_file = workspace / "sprint" / nn / "meta.md"
     if not meta_file.exists():
         meta_file.write_text(_META_TEMPLATE.format(team_names=team_names))
 
-    grooming_file = workspace / "sprint" / "01" / "grooming" / "backlog-ideas.md"
+    grooming_file = workspace / "sprint" / nn / "grooming" / "backlog-ideas.md"
     if not grooming_file.exists():
         grooming_file.write_text(
             "# Backlog Ideas\n<!-- Append new ideas below. Anyone can add. -->\n\n"
@@ -541,7 +544,7 @@ def init():
     if not milestones_file.exists():
         milestones_file.write_text(_MILESTONES_README_TEMPLATE.format(repo=repo))
 
-    click.echo("  scaffolded  workspace template files for Sprint 1")
+    click.echo(f"  scaffolded  workspace template files for Sprint {starting_sprint}")
 
     # GitHub labels (requires GITHUB_TOKEN)
     if repo != "your-org/your-repo" and os.environ.get("GITHUB_TOKEN"):
@@ -564,14 +567,14 @@ def init():
     click.echo(f"  1. Edit workspace/scraut.yml")
     click.echo(f"       Fill in slack_id and email for each team member.")
     click.echo(f"\n  2. Fill in today's standup")
-    click.echo(f"       workspace/sprint/01/standup/{today}/<login>.md")
+    click.echo(f"       workspace/sprint/{nn}/standup/{today}/<login>.md")
     click.echo(f"\n  3. Set GitHub Secrets  (Settings → Secrets → Actions)")
     click.echo(f"       [ ] {_key}")
     click.echo(f"       [ ] SLACK_WEBHOOK")
     click.echo(f"       [ ] SLACK_BOT_TOKEN")
-    click.echo(f"\n  4. Create Sprint 1")
+    click.echo(f"\n  4. Create Sprint {starting_sprint} (adds GitHub milestone)")
     click.echo(f"       python apps/automation/scraut/scrum/sprint/create_sprint.py \\")
-    click.echo(f"              --sprint 1 --repo {repo}")
+    click.echo(f"              --sprint {starting_sprint} --repo {repo}")
     click.echo(f"\n  5. Commit and push")
     click.echo(f"       git add . && git commit -m 'chore: scraut setup [skip ci]' && git push")
     click.echo(f"\n  6. Trigger sprint-planning from GitHub Actions UI")
