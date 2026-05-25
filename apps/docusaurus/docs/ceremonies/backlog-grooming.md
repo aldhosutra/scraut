@@ -42,7 +42,7 @@ Grooming workflow fires
 The **Product Owner** can also influence grooming by editing:
 
 ```
-workspace/sprint/01/grooming/backlog-ideas.md
+workspace/sprint/001/grooming/backlog-ideas.md
 ```
 
 **Template:**
@@ -119,7 +119,7 @@ Useful before sprint planning to ensure all backlog items are labelled.
 **Events:**
 
 1. **Alice** receives customer feedback: "The export button is broken on Firefox"
-2. **Alice** opens `workspace/sprint/01/grooming/backlog-ideas.md` and adds:
+2. **Alice** opens `workspace/sprint/001/grooming/backlog-ideas.md` and adds:
    ```markdown
    ## 2026-05-28
    - Bug: Export button broken on Firefox (reported by customer John at MegaCorp)

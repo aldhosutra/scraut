@@ -75,7 +75,7 @@ my-team/
 │   └── portal/                 ← visibility portal
 ├── workspace/
 │   ├── scraut.yml              ← your configuration
-│   ├── sprint/01/
+│   ├── sprint/001/
 │   │   ├── standup/TODAY/
 │   │   │   ├── alice.md        ← standup template for Alice
 │   │   │   ├── bob.md

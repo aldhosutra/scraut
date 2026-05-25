@@ -29,7 +29,7 @@ Incident occurs (production issue)
 
 Create a file in:
 ```
-.scraut/sprint/01/incidents/2026-05-24-api-timeout/
+.scraut/sprint/001/incidents/2026-05-24-api-timeout/
 ```
 
 **`incident.md`:**
@@ -110,7 +110,7 @@ the full exports table. Adding an index on user_id will reduce query time.
 - [ ] Migration tested in staging before production
 
 ## References
-- Incident report: .scraut/sprint/01/incidents/2026-05-24-api-timeout/incident.md
+- Incident report: .scraut/sprint/001/incidents/2026-05-24-api-timeout/incident.md
 ```
 
 ---
@@ -122,7 +122,7 @@ the full exports table. Adding an index on user_id will reduce query time.
 **Friday 16:30:**
 1. Alert fires — API timeouts
 2. **Bob** investigates and resolves by 17:15 (rolled back feature flag)
-3. **Bob** writes `incident.md` and `action-items.md` in `.scraut/sprint/01/incidents/`
+3. **Bob** writes `incident.md` and `action-items.md` in `.scraut/sprint/001/incidents/`
 4. Bob commits and pushes → `incident-to-backlog.yml` runs
 5. 4 GitHub issues created, all assigned, all linked to the incident
 6. Slack post in `#scraut-bot`: "4 backlog items created from API timeout incident"

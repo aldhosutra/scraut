@@ -33,7 +33,7 @@ Scraut flips this model. Your team edits simple Markdown files directly in GitHu
 │                   Your GitHub Repo                   │
 │                                                      │
 │  workspace/          ← Human-edited source of truth  │
-│  ├── sprint/01/                                      │
+│  ├── sprint/001/                                      │
 │  │   ├── standup/2026-05-24/alice.md  ← Alice edits  │
 │  │   ├── retrospective/alice.md       ← Alice edits  │
 │  │   └── meta.md                      ← SM edits     │
@@ -42,8 +42,8 @@ Scraut flips this model. Your team edits simple Markdown files directly in GitHu
 │  └── okr/okr.md                       ← PO edits     │
 │                                                      │
 │  .scraut/            ← Bot-generated output          │
-│  ├── sprint/01/standup/summary/       ← LLM writes   │
-│  ├── sprint/01/review/                ← LLM writes   │
+│  ├── sprint/001/standup/summary/       ← LLM writes   │
+│  ├── sprint/001/review/                ← LLM writes   │
 │  ├── insights/                        ← LLM writes   │
 │  └── suggestions/active/             ← LLM writes   │
 └─────────────────────────────────────────────────────┘

@@ -41,7 +41,7 @@ Good morning Alice! 🌅
 It's standup time for Sprint 01.
 
 📝 Your standup file:
-   workspace/sprint/01/standup/2026-05-24/alice.md
+   workspace/sprint/001/standup/2026-05-24/alice.md
 
 Quick options:
 • Run `scraut standup` to open it in GitHub
@@ -70,10 +70,10 @@ This opens your standup file directly in GitHub's web editor for today's date. E
 
 ```bash
 # The file is already created — just open it
-code workspace/sprint/01/standup/$(date +%Y-%m-%d)/$(git config user.name | tr ' ' '-' | tr '[:upper:]' '[:lower:]').md
+code workspace/sprint/001/standup/$(date +%Y-%m-%d)/$(git config user.name | tr ' ' '-' | tr '[:upper:]' '[:lower:]').md
 
 # Edit, then commit
-git add workspace/sprint/01/standup/
+git add workspace/sprint/001/standup/
 git commit -m "standup: $(date +%Y-%m-%d) [skip ci]"
 git push
 ```
@@ -89,7 +89,7 @@ Click the link in your Slack DM → GitHub opens the file in the pencil editor �
 Once the standup summary runs (typically by 9:30 AM), check:
 
 - **Slack:** the `#scraut-bot` channel has the daily summary post
-- **File:** `.scraut/sprint/01/standup/summary/2026-05-24.md`
+- **File:** `.scraut/sprint/001/standup/summary/2026-05-24.md`
 - **CLI:** `scraut status` (shows current sprint health + recent blockers)
 
 ---
@@ -108,7 +108,7 @@ Once the standup summary runs (typically by 9:30 AM), check:
 | 8:30 AM | Charlie's internet is slow — he edits directly on GitHub from the DM link |
 | 9:00 AM | Scraut standup summary workflow fires. All 3 files exist. |
 | 9:05 AM | LLM reads all 3 standup files, generates a unified summary |
-| 9:07 AM | Summary is committed to `.scraut/sprint/01/standup/summary/2026-05-27.md` |
+| 9:07 AM | Summary is committed to `.scraut/sprint/001/standup/summary/2026-05-27.md` |
 | 9:08 AM | Summary is posted to `#scraut-bot` in Slack |
 | 9:08 AM | Team sees: Alice is working on auth, Bob on API, Charlie flagged a blocker (waiting for design) |
 | 9:09 AM | Charlie DMs the designer directly — blocker resolved without a meeting |

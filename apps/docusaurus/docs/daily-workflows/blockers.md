@@ -21,7 +21,7 @@ This command:
 
 Then you commit and push as usual:
 ```bash
-git add workspace/sprint/01/standup/
+git add workspace/sprint/001/standup/
 git commit -m "standup: added blocker [skip ci]"
 git push
 ```

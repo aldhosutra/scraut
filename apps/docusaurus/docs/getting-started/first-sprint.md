@@ -107,10 +107,10 @@ Once you have at least a few issues in the backlog:
 4. Click **Run workflow**
 
 **What happens:**
-- Scraut creates the `workspace/sprint/01/` directory structure
+- Scraut creates the `workspace/sprint/001/` directory structure
 - Calls the LLM with your backlog + team capacity from `workspace/team/capacity.md`
 - Creates a GitHub PR titled `Sprint 1 Planning` with:
-  - `workspace/sprint/01/meta.md` filled in with proposed issues
+  - `workspace/sprint/001/meta.md` filled in with proposed issues
   - Story point assignments
   - Sprint goal suggestion
 
@@ -141,7 +141,7 @@ Once you have at least a few issues in the backlog:
 The whole team reviews the planning PR:
 - Check that the goal makes sense
 - Adjust story assignments if needed
-- Edit `workspace/sprint/01/meta.md` directly in the PR
+- Edit `workspace/sprint/001/meta.md` directly in the PR
 
 When everyone agrees, the Scrum Master merges it.
 
@@ -156,7 +156,7 @@ The `sprint-plan-pr.yml` workflow fires, applies the `in-sprint` label to all li
 The next morning at 7:55 am (your configured timezone), every team member gets a Slack DM:
 
 > Good morning Alice! Time for your standup 🌅
-> Open your file: `workspace/sprint/01/standup/2026-05-26/alice.md`
+> Open your file: `workspace/sprint/001/standup/2026-05-26/alice.md`
 > Sprint 1 ends in 14 days.
 
 The team opens their standup files (via the link or `scraut standup`), fills them in, and pushes. Scraut takes care of the rest.
@@ -184,7 +184,7 @@ Once Sprint 1 starts, Scraut runs on autopilot for everything during the sprint:
 |------|-------------------------------|
 | ⏱️ Every weekday ~2:00 AM | Creates today's standup file for each member |
 | ⏱️ Every weekday 7:55 AM | Sends morning standup DM to each member |
-| ⏱️ Every weekday 9:00 AM | Summarises standups → `.scraut/sprint/01/standup/summary/` → posts to Slack |
+| ⏱️ Every weekday 9:00 AM | Summarises standups → `.scraut/sprint/001/standup/summary/` → posts to Slack |
 | ⚡ When a new issue opens | Labels type and priority with LLM |
 | ⚡ When a PR opens | Fills PR description from linked issue acceptance criteria |
 | ⚡ When a PR merges | Closes linked sprint issues, triggers DoD check |
@@ -213,7 +213,7 @@ Fill in:
 - Sprint number: `1`
 - org/repo: `myorg/my-repo`
 
-This generates `.scraut/sprint/01/review/sprint-review.md` from closed issues, increments `current_sprint` in `scraut.yml`, and automatically kicks off suggestion detection.
+This generates `.scraut/sprint/001/review/sprint-review.md` from closed issues, increments `current_sprint` in `scraut.yml`, and automatically kicks off suggestion detection.
 
 **Step 2 — Sprint Retrospective** (SM triggers)
 
@@ -221,7 +221,7 @@ Go to **Actions → Scraut — Sprint Retrospective → Run workflow**
 
 Ask each team member to fill in their retro file first:
 ```
-workspace/sprint/01/retrospective/<login>.md
+workspace/sprint/001/retrospective/<login>.md
 ```
 
 Then trigger the workflow with sprint number `1`. It synthesises all per-member retros into a team themes document.

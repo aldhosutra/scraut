@@ -80,7 +80,7 @@ Replace the placeholder comments with your actual update:
 Once you've filled in the file, commit and push:
 
 ```bash
-git add workspace/sprint/01/standup/
+git add workspace/sprint/001/standup/
 git commit -m "standup: 2026-05-24 [skip ci]"
 git push
 ```
@@ -104,7 +104,7 @@ push detected
   → collects: alice.md, bob.md, charlie.md
   → LLM prompt: "Summarise these standups. Highlight blockers and cross-dependencies."
   → LLM generates structured summary
-  → atomic_write → .scraut/sprint/01/standup/summary/2026-05-24.md
+  → atomic_write → .scraut/sprint/001/standup/summary/2026-05-24.md
   → git commit "[skip ci]"
   → post_to_slack → #scraut-bot
 ```
@@ -129,7 +129,7 @@ The summary posted to Slack looks like:
 📈 Sprint health: 18 of 34 sp completed (53%) — on track.
 ```
 
-And the full file `.scraut/sprint/01/standup/summary/2026-05-24.md` has more detail.
+And the full file `.scraut/sprint/001/standup/summary/2026-05-24.md` has more detail.
 
 ---
 
@@ -184,7 +184,7 @@ The SM can optionally receive a daily summary of who was coached via `notify_sm:
 When [Agent Mode](../agent-mode/overview) is enabled, AI agents also submit standups in the same format, in the same directory:
 
 ```
-workspace/sprint/01/standup/2026-05-24/agent-backend.md
+workspace/sprint/001/standup/2026-05-24/agent-backend.md
 ```
 
 This means the team always has full visibility into what both humans and agents are working on, in one place.

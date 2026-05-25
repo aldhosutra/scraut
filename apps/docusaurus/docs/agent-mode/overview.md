@@ -92,7 +92,7 @@ agents:
 Each agent submits a daily standup at the same path as a human team member:
 
 ```
-workspace/sprint/01/standup/2026-05-24/agent-backend.md
+workspace/sprint/001/standup/2026-05-24/agent-backend.md
 ```
 
 **Example agent standup:**

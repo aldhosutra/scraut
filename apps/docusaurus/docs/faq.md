@@ -40,7 +40,7 @@ Starting sprint number (1 for a brand-new team): 5
 
 The wizard will:
 - Set `current_sprint: 5` in `scraut.yml`
-- Scaffold `workspace/sprint/05/` (not `sprint/01/`)
+- Scaffold `workspace/sprint/005/` (not `sprint/001/`)
 - Create today's standup files and retro templates for sprint 5
 - All subsequent automation — standup summaries, grooming, planning — works against sprint 5
 

@@ -96,7 +96,7 @@ For finer control (pause one agent, not all), set `enabled: false` on the specif
 ## Viewing checkpoint history
 
 ```bash
-cat .scraut/sprint/01/code/checkpoint-log.md
+cat .scraut/sprint/001/code/checkpoint-log.md
 ```
 
 ```markdown

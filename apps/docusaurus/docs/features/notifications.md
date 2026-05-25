@@ -20,7 +20,7 @@ Each team member with a configured `slack_id` receives:
 Good morning Alice! 🌅
 
 Standup time for Sprint 01.
-Your file: workspace/sprint/01/standup/2026-05-24/alice.md
+Your file: workspace/sprint/001/standup/2026-05-24/alice.md
 
 Quick tip: run `scraut standup` to open directly in GitHub.
 
@@ -56,7 +56,7 @@ Sprint 01 ends in 8 days.
 |-------|--------------|
 | Sprint planning PR created | "🗓️ Sprint 2 planning PR ready for review — see #42" |
 | Sprint planning merged | "🚀 Sprint 2 is GO! 26 sp committed across 6 issues" |
-| Sprint review complete | "📊 Sprint 1 complete! 30/34 sp (88%). Review in .scraut/sprint/01/review/" |
+| Sprint review complete | "📊 Sprint 1 complete! 30/34 sp (88%). Review in .scraut/sprint/001/review/" |
 | Retrospective synthesis done | "🔁 Sprint 1 retro synthesis ready — 3 themes, 4 action items" |
 | Backlog grooming done | "🌿 Grooming complete — 5 issues labelled, 1 scope creep alert" |
 

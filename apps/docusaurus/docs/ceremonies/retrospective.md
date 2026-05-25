@@ -53,7 +53,7 @@ workspace/sprint/NN/retrospective/[login].md
 Each team member commits their file:
 
 ```bash
-git add workspace/sprint/01/retrospective/
+git add workspace/sprint/001/retrospective/
 git commit -m "retro: sprint 01 [skip ci]"
 git push
 ```
@@ -77,12 +77,12 @@ Once all retro files are pushed:
 SM triggers sprint-retrospective
   │
   ├─ synthesise_retrospective.py
-  │     Reads all workspace/sprint/01/retrospective/*.md files
+  │     Reads all workspace/sprint/001/retrospective/*.md files
   │     Extracts "Went well", "Could improve", "Action items" sections
   │     Calls LLM: "Identify themes across these individual retros"
   │     LLM groups insights by theme, surfaces common patterns
   │
-  ├─ Writes .scraut/sprint/01/review/retro-synthesis.md  [BOT-GENERATED]
+  ├─ Writes .scraut/sprint/001/review/retro-synthesis.md  [BOT-GENERATED]
   │
   └─ Posts synthesis to #scraut-bot
 ```
@@ -91,7 +91,7 @@ SM triggers sprint-retrospective
 
 ## The synthesis document
 
-`.scraut/sprint/01/review/retro-synthesis.md`:
+`.scraut/sprint/001/review/retro-synthesis.md`:
 
 ```markdown
 <!-- BOT-GENERATED — Sprint 01 Retrospective Synthesis -->

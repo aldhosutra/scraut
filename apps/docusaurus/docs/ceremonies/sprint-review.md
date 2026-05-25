@@ -27,11 +27,11 @@ SM triggers sprint-review
   ├─ generate_review.py
   │     Fetches all issues closed this sprint (labeled in-sprint)
   │     Calculates: completed sp, planned sp, completion rate
-  │     Reads all standup summaries from .scraut/sprint/01/standup/summary/
+  │     Reads all standup summaries from .scraut/sprint/001/standup/summary/
   │     Reads milestone health from .scraut/milestones/
   │     Calls LLM: "Generate a sprint review document from this data"
   │
-  ├─ Writes .scraut/sprint/01/review/review.md  [BOT-GENERATED]
+  ├─ Writes .scraut/sprint/001/review/review.md  [BOT-GENERATED]
   │
   ├─ Updates workspace/scraut.yml current_sprint: 2  (increments sprint counter)
   │
@@ -44,7 +44,7 @@ SM triggers sprint-review
 
 ## The review document
 
-The generated review in `.scraut/sprint/01/review/review.md`:
+The generated review in `.scraut/sprint/001/review/review.md`:
 
 ```markdown
 <!-- BOT-GENERATED — Sprint 01 Review — 2026-06-08 -->
@@ -106,7 +106,7 @@ Issues that were not completed are automatically deferred:
 1. **Charlie** triggers sprint-review for Sprint 1
 2. Scraut fetches 7 closed issues (30 sp) and 1 open issue (#38, 3 sp, blocked by infra)
 3. LLM generates the review document highlighting the infra blocker
-4. Review is committed to `.scraut/sprint/01/review/review.md`
+4. Review is committed to `.scraut/sprint/001/review/review.md`
 5. Slack post arrives in `#scraut-bot`:
    > Sprint 01 complete! 30/34 sp (88%) — Goal MET ✓. 1 issue deferred (#38 — infra blocker). Sprint 02 planning ready.
 6. **suggestion-detect** workflow fires automatically — reads 1 sprint of history

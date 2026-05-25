@@ -56,7 +56,7 @@ Synced activity is written to:
 .scraut/sprint/NN/code/YYYY-MM-DD/[repo-name].md
 ```
 
-**Example file** (`.scraut/sprint/01/code/2026-05-24/backend-api.md`):
+**Example file** (`.scraut/sprint/001/code/2026-05-24/backend-api.md`):
 
 ```markdown
 <!-- BOT-GENERATED — Repo Sync — backend-api — 2026-05-24 -->
@@ -90,7 +90,7 @@ When team members write their standup each morning, the repo sync data is availa
 ...
 
 📦 Cross-repo activity (via Repo Sync)
-  Backend API: 3 commits, 1 merged PR (rate limiting — see .scraut/sprint/01/code/)
+  Backend API: 3 commits, 1 merged PR (rate limiting — see .scraut/sprint/001/code/)
   Mobile App: no activity today
 ```
 

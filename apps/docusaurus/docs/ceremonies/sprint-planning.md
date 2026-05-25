@@ -43,7 +43,7 @@ Before triggering sprint planning, make sure:
 SM clicks "Run workflow"
   │
   ├─ create_sprint.py
-  │     Creates workspace/sprint/02/ directory structure
+  │     Creates workspace/sprint/002/ directory structure
   │     Creates GitHub milestone "Sprint 02"
   │
   ├─ plan_sprint.py
@@ -53,12 +53,12 @@ SM clicks "Run workflow"
   │     Calculates available capacity: historical velocity × 0.85 buffer
   │     Calls LLM: "Given these stories and capacity, propose a sprint plan"
   │     LLM selects and prioritises stories
-  │     Fills workspace/sprint/02/meta.md
+  │     Fills workspace/sprint/002/meta.md
   │
   └─ Creates a GitHub PR:
         Title: "Sprint 2 Planning"
         Body: Sprint goal, issue table, capacity breakdown
-        Files: workspace/sprint/02/meta.md
+        Files: workspace/sprint/002/meta.md
 ```
 
 ---
@@ -109,7 +109,7 @@ The team reviews the PR. Common adjustments:
 - Change the sprint goal
 - Add OOO notes to capacity section
 
-To change an assignment: edit `workspace/sprint/02/meta.md` in the PR branch directly, or push a commit to the PR branch.
+To change an assignment: edit `workspace/sprint/002/meta.md` in the PR branch directly, or push a commit to the PR branch.
 
 ---
 
