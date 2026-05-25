@@ -91,8 +91,8 @@ const LLM_KEY_NAME = {
 // ---------------------------------------------------------------------------
 // Workspace template content
 // ---------------------------------------------------------------------------
-function standupTemplate(display, login, sprintNum, today) {
-  const nn = String(sprintNum).padStart(2, '0');
+function standupTemplate(display, login, sprintNum, today, padding = 3) {
+  const nn = String(sprintNum).padStart(padding, '0');
   return `# Standup — ${display}
 <!--
   Sprint: sprint-${nn}
@@ -125,8 +125,8 @@ None
 `;
 }
 
-function retroTemplate(display, sprintNum) {
-  const nn = String(sprintNum).padStart(2, '0');
+function retroTemplate(display, sprintNum, padding = 3) {
+  const nn = String(sprintNum).padStart(padding, '0');
   return `# Retro — ${display} — Sprint ${nn}
 
 ## Went well
@@ -397,6 +397,19 @@ async function main() {
     },
     {
       type: 'input',
+      name: 'folder_padding',
+      message: 'Sprint folder padding digits (3 → sprint/001/, 4 → sprint/0001/):',
+      default: (ans) => String(Math.max(3, String(ans.starting_sprint).length)),
+      validate: (v, ans) => {
+        const n = parseInt(v, 10);
+        const minNeeded = String(ans.starting_sprint).length;
+        if (!Number.isInteger(n) || n < 1) return 'Must be a positive integer';
+        if (n < minNeeded) return `Must be at least ${minNeeded} digits to fit sprint ${ans.starting_sprint}`;
+        return true;
+      },
+    },
+    {
+      type: 'input',
       name: 'slack_webhook',
       message: 'Slack webhook URL (Enter to skip):',
       default: '',
@@ -404,7 +417,8 @@ async function main() {
   ]);
 
   const startingSprint = parseInt(answers.starting_sprint, 10);
-  const nn = String(startingSprint).padStart(2, '0');
+  const folderPadding = parseInt(answers.folder_padding, 10);
+  const nn = String(startingSprint).padStart(folderPadding, '0');
   const logins = answers.team.split(',').map((l) => l.trim()).filter(Boolean);
   const members = logins.map((login) => ({
     login,
@@ -423,6 +437,7 @@ async function main() {
       timezone: answers.timezone,
       capacity_buffer: 0.85,
       current_sprint: startingSprint,
+      folder_padding: folderPadding,
     },
     team: {
       members,
@@ -461,6 +476,8 @@ async function main() {
       title: `${answers.repo.split('/')[0]} Dashboard`,
       public: true,
       refresh_minutes: 30,
+      sync_board: true,
+      project_number: null,
     },
     suggestions: { enabled: true, min_evidence_count: 3, measurement_sprints: 2 },
     paths: { workspace: 'workspace', scraut: '.scraut', portal: 'apps/portal' },
@@ -501,9 +518,9 @@ async function main() {
   for (const member of members) {
     const standupDir = `workspace/sprint/${nn}/standup/${today}`;
     writeIfMissing(`${standupDir}/${member.login}.md`,
-      standupTemplate(member.display, member.login, startingSprint, today));
+      standupTemplate(member.display, member.login, startingSprint, today, folderPadding));
     writeIfMissing(`workspace/sprint/${nn}/retrospective/${member.login}.md`,
-      retroTemplate(member.display, startingSprint));
+      retroTemplate(member.display, startingSprint, folderPadding));
   }
   writeIfMissing(`workspace/sprint/${nn}/meta.md`, metaTemplate(teamNames));
   writeIfMissing(`workspace/sprint/${nn}/grooming/backlog-ideas.md`,
