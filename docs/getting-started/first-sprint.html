@@ -4,8 +4,8 @@
 <meta charset="UTF-8">
 <meta name="generator" content="Docusaurus v3.10.1">
 <title data-rh="true">Your First Sprint | Scraut</title><meta data-rh="true" name="viewport" content="width=device-width,initial-scale=1"><meta data-rh="true" name="twitter:card" content="summary_large_image"><meta data-rh="true" property="og:image" content="https://aldhosutra.github.io/scraut/img/scraut-social.png"><meta data-rh="true" name="twitter:image" content="https://aldhosutra.github.io/scraut/img/scraut-social.png"><meta data-rh="true" property="og:url" content="https://aldhosutra.github.io/scraut/getting-started/first-sprint"><meta data-rh="true" property="og:locale" content="en"><meta data-rh="true" name="docusaurus_locale" content="en"><meta data-rh="true" name="docsearch:language" content="en"><meta data-rh="true" name="docusaurus_version" content="current"><meta data-rh="true" name="docusaurus_tag" content="docs-default-current"><meta data-rh="true" name="docsearch:version" content="current"><meta data-rh="true" name="docsearch:docusaurus_tag" content="docs-default-current"><meta data-rh="true" property="og:title" content="Your First Sprint | Scraut"><meta data-rh="true" name="description" content="With Scraut installed and GitHub configured, this guide walks you through launching Sprint 1 end-to-end."><meta data-rh="true" property="og:description" content="With Scraut installed and GitHub configured, this guide walks you through launching Sprint 1 end-to-end."><link data-rh="true" rel="icon" href="/scraut/img/favicon.ico"><link data-rh="true" rel="canonical" href="https://aldhosutra.github.io/scraut/getting-started/first-sprint"><link data-rh="true" rel="alternate" href="https://aldhosutra.github.io/scraut/getting-started/first-sprint" hreflang="en"><link data-rh="true" rel="alternate" href="https://aldhosutra.github.io/scraut/getting-started/first-sprint" hreflang="x-default"><script data-rh="true" type="application/ld+json">{"@context":"https://schema.org","@type":"BreadcrumbList","itemListElement":[{"@type":"ListItem","position":1,"name":"Your First Sprint","item":"https://aldhosutra.github.io/scraut/getting-started/first-sprint"}]}</script><link rel="stylesheet" href="/scraut/assets/css/styles.81953f54.css">
-<script src="/scraut/assets/js/runtime~main.b6477728.js" defer="defer"></script>
-<script src="/scraut/assets/js/main.86bb111c.js" defer="defer"></script>
+<script src="/scraut/assets/js/runtime~main.44365925.js" defer="defer"></script>
+<script src="/scraut/assets/js/main.d729aaed.js" defer="defer"></script>
 </head>
 <body>
 <svg style="display: none;"><defs>
@@ -57,11 +57,11 @@
 </ol>
 <p><strong>What happens:</strong></p>
 <ul>
-<li class="">Scraut creates the <code>workspace/sprint/01/</code> directory structure</li>
+<li class="">Scraut creates the <code>workspace/sprint/001/</code> directory structure</li>
 <li class="">Calls the LLM with your backlog + team capacity from <code>workspace/team/capacity.md</code></li>
 <li class="">Creates a GitHub PR titled <code>Sprint 1 Planning</code> with:<!-- -->
 <ul>
-<li class=""><code>workspace/sprint/01/meta.md</code> filled in with proposed issues</li>
+<li class=""><code>workspace/sprint/001/meta.md</code> filled in with proposed issues</li>
 <li class="">Story point assignments</li>
 <li class="">Sprint goal suggestion</li>
 </ul>
@@ -75,7 +75,7 @@
 <ul>
 <li class="">Check that the goal makes sense</li>
 <li class="">Adjust story assignments if needed</li>
-<li class="">Edit <code>workspace/sprint/01/meta.md</code> directly in the PR</li>
+<li class="">Edit <code>workspace/sprint/001/meta.md</code> directly in the PR</li>
 </ul>
 <p>When everyone agrees, the Scrum Master merges it.</p>
 <div class="theme-admonition theme-admonition-info admonition_xJq3 alert alert--info"><div class="admonitionHeading_Gvgb"><span class="admonitionIcon_Rf37"><svg viewBox="0 0 14 16"><path fill-rule="evenodd" d="M7 2.3c3.14 0 5.7 2.56 5.7 5.7s-2.56 5.7-5.7 5.7A5.71 5.71 0 0 1 1.3 8c0-3.14 2.56-5.7 5.7-5.7zM7 1C3.14 1 0 4.14 0 8s3.14 7 7 7 7-3.14 7-7-3.14-7-7-7zm1 3H6v5h2V4zm0 6H6v2h2v-2z"></path></svg></span>What happens on merge</div><div class="admonitionContent_BuS1"><p>The <code>sprint-plan-pr.yml</code> workflow fires, applies the <code>in-sprint</code> label to all listed issues, and creates the corresponding GitHub milestone.</p></div></div>
@@ -84,7 +84,7 @@
 <p>The next morning at 7:55 am (your configured timezone), every team member gets a Slack DM:</p>
 <blockquote>
 <p>Good morning Alice! Time for your standup 🌅
-Open your file: <code>workspace/sprint/01/standup/2026-05-26/alice.md</code>
+Open your file: <code>workspace/sprint/001/standup/2026-05-26/alice.md</code>
 Sprint 1 ends in 14 days.</p>
 </blockquote>
 <p>The team opens their standup files (via the link or <code>scraut standup</code>), fills them in, and pushes. Scraut takes care of the rest.</p>
@@ -103,7 +103,7 @@ Sprint 1 ends in 14 days.</p>
 <hr>
 <h2 class="anchor anchorTargetStickyNavbar_Vzrq" id="whats-automated-from-here">What&#x27;s automated from here<a href="#whats-automated-from-here" class="hash-link" aria-label="Direct link to What&#x27;s automated from here" title="Direct link to What&#x27;s automated from here" translate="no">​</a></h2>
 <p>Once Sprint 1 starts, Scraut runs on autopilot for everything during the sprint:</p>
-<table><thead><tr><th>When</th><th>What Scraut does automatically</th></tr></thead><tbody><tr><td>⏱️ Every weekday ~2:00 AM</td><td>Creates today&#x27;s standup file for each member</td></tr><tr><td>⏱️ Every weekday 7:55 AM</td><td>Sends morning standup DM to each member</td></tr><tr><td>⏱️ Every weekday 9:00 AM</td><td>Summarises standups → <code>.scraut/sprint/01/standup/summary/</code> → posts to Slack</td></tr><tr><td>⚡ When a new issue opens</td><td>Labels type and priority with LLM</td></tr><tr><td>⚡ When a PR opens</td><td>Fills PR description from linked issue acceptance criteria</td></tr><tr><td>⚡ When a PR merges</td><td>Closes linked sprint issues, triggers DoD check</td></tr><tr><td>⚡ When an issue closes</td><td>Checks Definition of Done criteria</td></tr><tr><td>⏱️ Every Wednesday</td><td>Backlog grooming — prioritises unlabelled issues, checks scope creep</td></tr><tr><td>⏱️ Every 30 minutes</td><td>Syncs board state from text files</td></tr><tr><td>⏱️ Every Monday</td><td>Sends weekly stakeholder digest</td></tr></tbody></table>
+<table><thead><tr><th>When</th><th>What Scraut does automatically</th></tr></thead><tbody><tr><td>⏱️ Every weekday ~2:00 AM</td><td>Creates today&#x27;s standup file for each member</td></tr><tr><td>⏱️ Every weekday 7:55 AM</td><td>Sends morning standup DM to each member</td></tr><tr><td>⏱️ Every weekday 9:00 AM</td><td>Summarises standups → <code>.scraut/sprint/001/standup/summary/</code> → posts to Slack</td></tr><tr><td>⚡ When a new issue opens</td><td>Labels type and priority with LLM</td></tr><tr><td>⚡ When a PR opens</td><td>Fills PR description from linked issue acceptance criteria</td></tr><tr><td>⚡ When a PR merges</td><td>Closes linked sprint issues, triggers DoD check</td></tr><tr><td>⚡ When an issue closes</td><td>Checks Definition of Done criteria</td></tr><tr><td>⏱️ Every Wednesday</td><td>Backlog grooming — prioritises unlabelled issues, checks scope creep</td></tr><tr><td>⏱️ Every 30 minutes</td><td>Syncs board state from text files</td></tr><tr><td>⏱️ Every Monday</td><td>Sends weekly stakeholder digest</td></tr></tbody></table>
 <p>Your team&#x27;s only job during the sprint: <strong>commit your standup file each morning.</strong></p>
 <hr>
 <h2 class="anchor anchorTargetStickyNavbar_Vzrq" id="end-of-sprint--manual-steps-required">End of sprint — manual steps required<a href="#end-of-sprint--manual-steps-required" class="hash-link" aria-label="Direct link to End of sprint — manual steps required" title="Direct link to End of sprint — manual steps required" translate="no">​</a></h2>
@@ -116,11 +116,11 @@ Sprint 1 ends in 14 days.</p>
 <li class="">Sprint number: <code>1</code></li>
 <li class="">org/repo: <code>myorg/my-repo</code></li>
 </ul>
-<p>This generates <code>.scraut/sprint/01/review/sprint-review.md</code> from closed issues, increments <code>current_sprint</code> in <code>scraut.yml</code>, and automatically kicks off suggestion detection.</p>
+<p>This generates <code>.scraut/sprint/001/review/sprint-review.md</code> from closed issues, increments <code>current_sprint</code> in <code>scraut.yml</code>, and automatically kicks off suggestion detection.</p>
 <p><strong>Step 2 — Sprint Retrospective</strong> (SM triggers)</p>
 <p>Go to <strong>Actions → Scraut — Sprint Retrospective → Run workflow</strong></p>
 <p>Ask each team member to fill in their retro file first:</p>
-<div class="language-text codeBlockContainer_Ckt0 theme-code-block" style="--prism-color:#393A34;--prism-background-color:#f6f8fa"><div class="codeBlockContent_QJqH"><pre tabindex="0" class="prism-code language-text codeBlock_bY9V thin-scrollbar" style="color:#393A34;background-color:#f6f8fa"><code class="codeBlockLines_e6Vv"><div class="token-line" style="color:#393A34"><span class="token plain">workspace/sprint/01/retrospective/&lt;login&gt;.md</span><br></div></code></pre></div></div>
+<div class="language-text codeBlockContainer_Ckt0 theme-code-block" style="--prism-color:#393A34;--prism-background-color:#f6f8fa"><div class="codeBlockContent_QJqH"><pre tabindex="0" class="prism-code language-text codeBlock_bY9V thin-scrollbar" style="color:#393A34;background-color:#f6f8fa"><code class="codeBlockLines_e6Vv"><div class="token-line" style="color:#393A34"><span class="token plain">workspace/sprint/001/retrospective/&lt;login&gt;.md</span><br></div></code></pre></div></div>
 <p>Then trigger the workflow with sprint number <code>1</code>. It synthesises all per-member retros into a team themes document.</p>
 <p><strong>Step 3 — Next Sprint Planning</strong> (SM triggers, start of new sprint)</p>
 <p>Go to <strong>Actions → Scraut — Sprint Planning → Run workflow</strong></p>
