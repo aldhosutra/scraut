@@ -9,6 +9,12 @@ sprint:
   capacity_buffer: 0.85             # Plan to 85% of historical velocity (safety)
   current_sprint: 1                 # Auto-incremented by close_sprint.py
   folder_padding: 3                 # Zero-padding width for sprint folder names (e.g. 3 → sprint/001/)
+  work_days:                        # Days your team works. Omit or leave empty for Mon–Fri default.
+    - monday                        # Sun–Thu example: [sunday, monday, tuesday, wednesday, thursday]
+    - tuesday
+    - wednesday
+    - thursday
+    - friday
 
 team:
   members:

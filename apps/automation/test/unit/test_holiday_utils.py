@@ -1,4 +1,4 @@
-"""test/unit/test_holiday_utils.py — holiday utility unit tests"""
+"""test/unit/test_holiday_utils.py — holiday utility and work_days unit tests"""
 import json
 import pytest
 from datetime import date
@@ -8,6 +8,7 @@ from unittest.mock import patch, MagicMock
 from scraut.platform.utils.holiday_utils import (
     get_public_holidays, get_all_holidays, is_holiday, clear_cache,
 )
+from scraut.platform.utils.config import get_work_days
 from scraut.platform.utils.date_utils import is_working_day
 
 
@@ -191,3 +192,95 @@ def test_is_working_day_no_holidays_key_behaves_as_weekday_check():
     cfg = {"sprint": {"current_sprint": 1}}
     monday = date(2026, 5, 25)
     assert is_working_day(monday, cfg) is True
+
+
+# ── get_work_days ─────────────────────────────────────────────────────────────
+
+def _sprint_cfg(work_days=None):
+    base = {"sprint": {"current_sprint": 1}}
+    if work_days is not None:
+        base["sprint"]["work_days"] = work_days
+    return base
+
+
+@pytest.mark.unit
+def test_work_days_default_is_mon_fri():
+    result = get_work_days(_sprint_cfg())
+    assert result == frozenset({0, 1, 2, 3, 4})
+
+
+@pytest.mark.unit
+def test_work_days_empty_list_uses_default():
+    result = get_work_days(_sprint_cfg(work_days=[]))
+    assert result == frozenset({0, 1, 2, 3, 4})
+
+
+@pytest.mark.unit
+def test_work_days_sun_thu_schedule():
+    cfg = _sprint_cfg(work_days=["sunday", "monday", "tuesday", "wednesday", "thursday"])
+    result = get_work_days(cfg)
+    assert result == frozenset({6, 0, 1, 2, 3})
+
+
+@pytest.mark.unit
+def test_work_days_four_day_week():
+    cfg = _sprint_cfg(work_days=["monday", "tuesday", "wednesday", "thursday"])
+    result = get_work_days(cfg)
+    assert result == frozenset({0, 1, 2, 3})
+    assert 4 not in result   # Friday excluded
+
+
+@pytest.mark.unit
+def test_work_days_invalid_name_ignored():
+    cfg = _sprint_cfg(work_days=["monday", "funday"])
+    result = get_work_days(cfg)
+    assert result == frozenset({0})
+
+
+@pytest.mark.unit
+def test_work_days_case_insensitive():
+    cfg = _sprint_cfg(work_days=["Monday", "FRIDAY"])
+    result = get_work_days(cfg)
+    assert result == frozenset({0, 4})
+
+
+# ── is_working_day with work_days config ──────────────────────────────────────
+
+@pytest.mark.unit
+def test_is_working_day_friday_excluded_in_4day_week():
+    friday = date(2026, 5, 29)    # weekday() == 4
+    cfg = _sprint_cfg(work_days=["monday", "tuesday", "wednesday", "thursday"])
+    assert is_working_day(friday, cfg) is False
+
+
+@pytest.mark.unit
+def test_is_working_day_sunday_working_in_sun_thu_schedule():
+    sunday = date(2026, 5, 24)    # weekday() == 6
+    cfg = _sprint_cfg(work_days=["sunday", "monday", "tuesday", "wednesday", "thursday"])
+    assert is_working_day(sunday, cfg) is True
+
+
+@pytest.mark.unit
+def test_is_working_day_saturday_non_working_in_sun_thu():
+    saturday = date(2026, 5, 23)  # weekday() == 5
+    cfg = _sprint_cfg(work_days=["sunday", "monday", "tuesday", "wednesday", "thursday"])
+    assert is_working_day(saturday, cfg) is False
+
+
+@pytest.mark.unit
+def test_is_working_day_holiday_on_work_day_is_false():
+    """A day in work_days is still non-working if it's a holiday."""
+    monday = date(2026, 5, 25)
+    cfg = {
+        "sprint": {"work_days": ["monday", "tuesday", "wednesday", "thursday", "friday"]},
+        "holidays": {"country_code": "", "extra_dates": ["2026-05-25"], "skip_dates": []},
+    }
+    assert is_working_day(monday, cfg) is False
+
+
+@pytest.mark.unit
+def test_is_working_day_no_config_falls_back_to_mon_fri():
+    friday = date(2026, 5, 29)
+    saturday = date(2026, 5, 30)
+    assert is_working_day(friday) is True
+    assert is_working_day(saturday) is False

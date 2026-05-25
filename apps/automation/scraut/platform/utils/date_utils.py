@@ -25,19 +25,26 @@ def get_sprint_dates(sprint_num: int, config: dict) -> tuple[date, date]:
 def is_working_day(d: Optional[date] = None,
                    config: Optional[dict] = None,
                    scraut_root: Optional[Path] = None) -> bool:
-    """Return True if d is a working day (weekday and not a holiday).
+    """Return True if d is a working day for this team.
 
-    Pass config to enable holiday awareness. Without config only weekends
-    are excluded, preserving backward compatibility for callers that don't
-    have config available.
+    Checks sprint.work_days (default Mon–Fri) then the holiday list.
+    Pass config to enable both; without it only Mon–Fri and no holidays
+    are assumed (backward-compatible).
     """
     if d is None:
         d = date.today()
-    if d.weekday() >= 5:
+
+    if config:
+        from scraut.platform.utils.config import get_work_days
+        if d.weekday() not in get_work_days(config):
+            return False
+    elif d.weekday() >= 5:
         return False
+
     if config and config.get("holidays"):
         from scraut.platform.utils.holiday_utils import is_holiday
         return not is_holiday(d, config, scraut_root)
+
     return True
 
 

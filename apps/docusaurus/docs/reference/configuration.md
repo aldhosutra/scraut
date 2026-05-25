@@ -30,6 +30,22 @@ sprint:
 | `capacity_buffer` | `0.85` | `planning_capacity = velocity × buffer` |
 | `current_sprint` | `1` | Incremented automatically by `close_sprint.py` |
 | `folder_padding` | `3` | Digits in sprint folder names: `3` → `sprint/001/`, `4` → `sprint/0001/`. Widen with `scraut sprint repad <N>`. Never reduce. |
+| `work_days` | Mon–Fri | List of day names your team works. Affects `is_working_day()`, burndown ideal line, and ceremony skip logic. See examples below. |
+
+**`work_days` examples:**
+
+```yaml
+# Standard Mon–Fri (default — field can be omitted)
+work_days: [monday, tuesday, wednesday, thursday, friday]
+
+# Middle East / Gulf Sun–Thu
+work_days: [sunday, monday, tuesday, wednesday, thursday]
+
+# 4-day week (Mon–Thu)
+work_days: [monday, tuesday, wednesday, thursday]
+```
+
+Day names are case-insensitive. Unknown names are ignored with a warning. If the list is empty or the field is absent, Mon–Fri is assumed.
 
 ---
 

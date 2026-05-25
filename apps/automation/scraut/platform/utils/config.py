@@ -124,6 +124,33 @@ def get_folder_padding() -> int:
     return int(get_config().get("sprint", {}).get("folder_padding", 3))
 
 
+_DAY_NAME_TO_INT: dict[str, int] = {
+    "monday": 0, "tuesday": 1, "wednesday": 2, "thursday": 3,
+    "friday": 4, "saturday": 5, "sunday": 6,
+}
+_DEFAULT_WORK_DAYS: frozenset[int] = frozenset({0, 1, 2, 3, 4})  # Mon–Fri
+
+
+def get_work_days(config: Optional[dict] = None) -> frozenset[int]:
+    """Return the set of working weekday integers (0=Mon … 6=Sun).
+
+    Reads sprint.work_days from config (list of lowercase day names).
+    Defaults to Monday–Friday if the field is absent or empty.
+    """
+    cfg = config or get_config()
+    raw = cfg.get("sprint", {}).get("work_days") or []
+    if not raw:
+        return _DEFAULT_WORK_DAYS
+    result: set[int] = set()
+    for name in raw:
+        key = str(name).strip().lower()
+        if key in _DAY_NAME_TO_INT:
+            result.add(_DAY_NAME_TO_INT[key])
+        else:
+            logger.warning(f"Unknown work_day value {name!r} — expected a weekday name")
+    return frozenset(result) if result else _DEFAULT_WORK_DAYS
+
+
 def get_team_members() -> list[dict]:
     return get_config()["team"]["members"]
 
