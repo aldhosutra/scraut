@@ -49,17 +49,17 @@ repos:                              # Connected GitHub repos for code activity s
     enabled: false
 
 llm:
-  provider: anthropic               # anthropic | openai | gemini | ollama | github
-                                    #   github: uses GITHUB_TOKEN (auto-provided by Actions, no extra secret)
-  model: claude-sonnet-4-6          # Model name (provider-specific)
+  provider: github                  # anthropic | openai | gemini | ollama | github
+                                    #   github: uses GITHUB_TOKEN — auto-provided by Actions, zero extra setup
+  model: gpt-4o-mini                # Model name (provider-specific)
   small_model: ""                   # Optional: cheaper/faster model for simple tasks
+                                    #   github example:    gpt-4o-mini  (same as model — already small)
                                     #   anthropic example: claude-haiku-4-5-20251001
-                                    #   openai example:    gpt-4o-mini
-                                    #   github example:    gpt-4o-mini
+                                    #   gemini example:    gemma-4-31b-it
                                     #   Leave empty to use the primary model for everything.
   base_url: ""                      # Optional: override API base URL
-                                    #   anthropic: Anthropic-compatible proxy
                                     #   openai: Groq / DeepSeek / LM Studio / any OpenAI-compat
+                                    #   ollama: http://localhost:11434 or http://host.docker.internal:11434
                                     #   (leave empty to use the provider's default endpoint)
   max_tokens: 1000                  # Per-call token limit
   cost_controls:
@@ -69,13 +69,19 @@ llm:
   # Fallback provider — used automatically when the primary provider fails
   # (e.g. API key not set, quota exceeded, network error).
   #
-  # Option A: GitHub Models — zero extra setup; GITHUB_TOKEN is always available in Actions
-  fallback:
-    provider: github
-    model: gpt-4o-mini              # fast, cheap; covers all Scraut tasks well
+  # Upgrade options (uncomment one to get better quality or higher limits):
   #
-  # Option B: Ollama — fully local, no API key, works offline or on self-hosted runners
-  # Requires the setup-ollama composite action in your workflows (see docs).
+  # Option A: Gemini — free tier, 15k RPD, unlimited TPD, 31B model quality
+  # fallback:
+  #   provider: gemini
+  #   model: gemma-4-31b-it         # free, 1.5k RPD, unlimited TPD
+  #
+  # Option B: Anthropic — best reasoning, paid
+  # fallback:
+  #   provider: anthropic
+  #   model: claude-sonnet-4-6
+  #
+  # Option C: Ollama — fully offline, self-hosted runners or local act tests
   # fallback:
   #   provider: ollama
   #   model: qwen2.5:0.5b           # 394 MB, sub-1B, best quality/size ratio

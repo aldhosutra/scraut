@@ -45,16 +45,14 @@ definition_of_done:
 repos: []
 
 llm:
-  provider: anthropic
-  model: claude-sonnet-4-6
+  provider: github
+  model: gpt-4o-mini
   small_model: ""
   max_tokens: 1000
   cost_controls:
     max_daily_tokens: 100000
     batch_where_possible: false
-  fallback:
-    provider: github
-    model: gpt-4o-mini
+  fallback: {}
 
 agents:
   enabled: false
