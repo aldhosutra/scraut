@@ -43,29 +43,39 @@ workspace/
 │       │   └── YYYY-MM-DD/
 │       │       ├── alice.md           ← Alice's daily standup
 │       │       ├── bob.md             ← Bob's daily standup
-│       │       └── agent-backend.md  ← Agent standup (if agent mode on)
+│       │       ├── agent-backend.md  ← Agent standup (if agent mode on)
+│       │       └── _example.md       ← Format reference (never processed)
 │       ├── retrospective/
 │       │   ├── alice.md              ← Alice's retro input
-│       │   └── bob.md
+│       │   ├── bob.md
+│       │   └── _example.md          ← Format reference (never processed)
 │       ├── grooming/
-│       │   └── backlog-ideas.md      ← Anyone can append new ideas here
-│       ├── decisions/                ← Architectural decision records (ADRs)
+│       │   ├── backlog-ideas.md      ← Anyone can append new ideas here
+│       │   └── _example.md          ← Format reference (never processed)
+│       ├── decisions/
+│       │   └── _example.md          ← Format reference (never processed)
 │       └── adr/
+│           └── _example.md          ← Format reference (never processed)
 │
 ├── team/
-│   └── capacity.md                   ← OOO and availability per sprint
+│   ├── capacity.md                   ← OOO and availability per sprint
+│   └── _example.md                  ← Format reference (never processed)
 │
 ├── okr/
-│   └── okr.md                        ← Team objectives and key results
+│   ├── okr.md                        ← Team objectives and key results
+│   └── _example.md                  ← Format reference (never processed)
 │
 ├── customer/
-│   └── feedback.md                   ← Customer feedback log
+│   ├── feedback.md                   ← Customer feedback log
+│   └── _example.md                  ← Format reference (never processed)
 │
-├── knowledge/                        ← Team knowledge base (free-form)
+├── knowledge/
+│   └── _example.md                  ← Format reference (never processed)
 │
 └── milestones/
-    ├── README.md                     ← Milestone file format guide
-    └── v2.0.md                       ← One file per milestone
+    ├── _example-milestone.md         ← Format reference (never processed)
+    └── v1.0/
+        └── milestone.md             ← One subdirectory + milestone.md per milestone
 ```
 
 ---
@@ -214,6 +224,12 @@ See [Workflows Reference](./workflows) for full descriptions.
 
 ---
 
+:::tip File formats
+For the full content format of every file in `workspace/` (with annotated examples), see the [Workspace File Formats reference →](./workspace-formats)
+:::
+
+---
+
 ## File naming conventions
 
 | Pattern | Meaning |
@@ -233,3 +249,4 @@ See [Workflows Reference](./workflows) for full descriptions.
 | Bot commits have `[skip ci]` | All workflow git commits include `[skip ci]` in message |
 | One file per contributor | `workspace/sprint/NN/standup/DATE/login.md` — one per login |
 | Board is derived view | `sync_board.py` reads text files; never reads the board |
+| `_*.md` files are always skipped | `glob_md()` in `file_utils.py` filters out any file whose name starts with `_` |

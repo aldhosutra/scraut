@@ -81,6 +81,7 @@ const sidebars = {
         'reference/team-roles',
         'reference/workflows',
         'reference/file-structure',
+        'reference/workspace-formats',
         'reference/llm-providers',
         'reference/labels',
       ],
