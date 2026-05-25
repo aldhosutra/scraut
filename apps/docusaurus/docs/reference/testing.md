@@ -89,8 +89,8 @@ gh auth login
 **Set up secrets (one-time):**
 ```bash
 cp apps/automation/test/act/.secrets.example .secrets
-# Edit .secrets and fill in GITHUB_TOKEN (minimum required)
-# Other secrets are optional — LLM falls back to github provider if unset
+# Set GITHUB_TOKEN — minimum required
+gh auth token   # copy output into .secrets
 ```
 
 **Run all act tests:**
@@ -117,7 +117,54 @@ cp apps/automation/test/act/.secrets.example .secrets
 | `backlog-grooming.yml` | `workflow_dispatch` | prioritisation + scope check, no posts |
 | `issue-triage.yml` | `workflow_dispatch` | triage script, no label/comment writes |
 
-All tests pass `dry_run=true` — scripts receive `--dry-run` and skip all writes, GitHub mutations, and Slack posts. LLM calls use the fallback chain (github provider → empty string) so no API key is strictly required.
+All tests pass `dry_run=true` — scripts receive `--dry-run` and skip all writes, GitHub mutations, and Slack posts.
+
+**LLM calls still happen.** Most scripts call `complete()` before the `if not dry_run:` gate, so LLM is invoked even in dry-run mode. Without credentials the fallback returns `""` silently. With a `GITHUB_TOKEN` in `.secrets`, the fallback chain automatically uses GitHub Models (`gpt-4o-mini`) — real LLM output is generated but never written anywhere.
+
+---
+
+## Using real LLM in act tests
+
+LLM calls already happen in dry-run act tests — scripts call `complete()` before the `dry_run` gate. The question is just which model responds.
+
+### Option 1: GitHub Models (recommended, zero extra config)
+
+`GITHUB_TOKEN` in `.secrets` auto-activates the fallback chain in `scraut.yml`:
+
+```yaml
+fallback:
+  provider: github
+  model: gpt-4o-mini
+```
+
+When the primary provider has no key, the fallback fires → real `gpt-4o-mini` output. No API cost, available to all GitHub accounts.
+
+```bash
+gh auth token   # copy into .secrets as GITHUB_TOKEN=<token>
+```
+
+### Option 2: Ollama on host (fully offline)
+
+act runs in Docker. Ollama on your Mac is reachable inside the container at `host.docker.internal:11434`. To use it:
+
+1. Start Ollama on your Mac:
+```bash
+brew install ollama
+ollama pull qwen2.5:0.5b    # 394 MB, only once
+ollama serve                 # keep running during tests
+```
+
+2. Point `workspace/scraut.yml` at the host:
+```yaml
+llm:
+  provider: ollama
+  model: qwen2.5:0.5b
+  base_url: http://host.docker.internal:11434
+```
+
+No API key needed. `qwen2.5:0.5b` is the best sub-1B model — 394 MB, excellent instruction-following on CPU.
+
+---
 
 :::note Why act tests are local-only
 Running `act` inside GitHub Actions requires Docker-in-Docker (`--privileged` mode), which is not available on GitHub-hosted runners. `actionlint` (Layer 3) provides automated YAML validation in CI. Run `act` tests locally before pushing workflow changes.

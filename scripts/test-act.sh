@@ -47,6 +47,11 @@ if [ -z "$GITHUB_TOKEN" ]; then
     echo -e "${YELLOW}WARNING: No GITHUB_TOKEN. LLM calls will return empty strings (tests still run).${NC}"
     echo "  Fix: gh auth login  OR  export GITHUB_TOKEN=your_token"
     echo ""
+else
+    echo -e "${GREEN}LLM: GitHub Models fallback active (gpt-4o-mini via GITHUB_TOKEN)${NC}"
+    echo "  Scripts call LLM before the dry_run gate — real LLM output is generated,"
+    echo "  but nothing is written to files or posted to GitHub/Slack."
+    echo ""
 fi
 
 # ── Test runner ─────────────────────────────────────────────────────────────
