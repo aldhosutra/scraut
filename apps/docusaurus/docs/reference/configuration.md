@@ -148,8 +148,27 @@ llm:
 | `max_tokens` | `1000` | Per-call output token limit |
 | `cost_controls.max_daily_tokens` | `100000` | Hard fail-safe across all daily LLM calls |
 | `cost_controls.batch_where_possible` | `false` | Merge multiple LLM requests into one call |
+| `fallback.provider` | `""` (disabled) | Retried automatically when the primary provider fails |
+| `fallback.model` | `""` | Model for the fallback provider |
 
-See [LLM Providers](./llm-providers) for model options, `small_model` examples, and `base_url` patterns.
+**Fallback examples:**
+
+```yaml
+# Option A — GitHub Models (recommended): zero setup, GITHUB_TOKEN always present
+llm:
+  fallback:
+    provider: github
+    model: gpt-4o-mini
+
+# Option B — Ollama: fully local, no API key needed
+# Add the setup-ollama composite action to your workflows (already included).
+llm:
+  fallback:
+    provider: ollama
+    model: qwen2.5:0.5b   # 394 MB, sub-1B, best quality/size for CPU inference
+```
+
+See [LLM Providers → Automatic fallback](./llm-providers#automatic-fallback) for the full comparison and guidance on Ollama in GitHub Actions.
 
 ---
 

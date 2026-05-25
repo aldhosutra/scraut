@@ -433,4 +433,71 @@ class TestCompleteBatch:
                    return_value=self._cfg_batch(batch=True)):
             with patch("scraut.platform.llm.client.complete", side_effect=_side):
                 result = llm_client.complete_batch(["a", "b"])
+
         assert result == ["r", "r"]
+
+# ---------------------------------------------------------------------------
+# Fallback provider
+# ---------------------------------------------------------------------------
+
+@pytest.mark.unit
+class TestFallback:
+    def _cfg_with_fallback(self, fb_provider="github", fb_model="gpt-4o-mini"):
+        c = _cfg("anthropic")
+        c["fallback"] = {"provider": fb_provider, "model": fb_model}
+        return c
+
+    def test_fallback_triggered_on_primary_failure(self, monkeypatch):
+        monkeypatch.setenv("ANTHROPIC_API_KEY", "sk-test")
+        cfg = self._cfg_with_fallback("github", "gpt-4o-mini")
+        with patch("scraut.platform.llm.client.get_llm_config", return_value=cfg):
+            with patch("scraut.platform.llm.client._call_anthropic",
+                       side_effect=RuntimeError("no key")):
+                with patch("scraut.platform.llm.client._call_github",
+                           return_value="fallback answer") as fb:
+                    result = llm_client.complete("q")
+        assert result == "fallback answer"
+        fb.assert_called_once()
+
+    def test_fallback_not_triggered_on_success(self, monkeypatch):
+        monkeypatch.setenv("ANTHROPIC_API_KEY", "sk-test")
+        cfg = self._cfg_with_fallback("github", "gpt-4o-mini")
+        with patch("scraut.platform.llm.client.get_llm_config", return_value=cfg):
+            with patch("scraut.platform.llm.client._call_anthropic",
+                       return_value="primary answer"):
+                with patch("scraut.platform.llm.client._call_github") as fb:
+                    result = llm_client.complete("q")
+        assert result == "primary answer"
+        fb.assert_not_called()
+
+    def test_fallback_also_fails_returns_empty(self, monkeypatch):
+        monkeypatch.setenv("ANTHROPIC_API_KEY", "sk-test")
+        cfg = self._cfg_with_fallback("ollama", "qwen2.5:0.5b")
+        with patch("scraut.platform.llm.client.get_llm_config", return_value=cfg):
+            with patch("scraut.platform.llm.client._call_anthropic",
+                       side_effect=RuntimeError("primary fail")):
+                with patch("scraut.platform.llm.client._call_ollama",
+                           side_effect=RuntimeError("ollama not running")):
+                    result = llm_client.complete("q")
+        assert result == ""
+
+    def test_no_fallback_configured_returns_empty_on_failure(self, monkeypatch):
+        monkeypatch.setenv("ANTHROPIC_API_KEY", "sk-test")
+        cfg = _cfg("anthropic")
+        cfg.pop("fallback", None)
+        with patch("scraut.platform.llm.client.get_llm_config", return_value=cfg):
+            with patch("scraut.platform.llm.client._call_anthropic",
+                       side_effect=RuntimeError("fail")):
+                result = llm_client.complete("q")
+        assert result == ""
+
+    def test_fallback_uses_fallback_model(self, monkeypatch):
+        monkeypatch.setenv("ANTHROPIC_API_KEY", "sk-test")
+        cfg = self._cfg_with_fallback("ollama", "qwen2.5:0.5b")
+        with patch("scraut.platform.llm.client.get_llm_config", return_value=cfg):
+            with patch("scraut.platform.llm.client._call_anthropic",
+                       side_effect=RuntimeError("fail")):
+                with patch("scraut.platform.llm.client._call_ollama",
+                           return_value="ok") as m:
+                    llm_client.complete("q")
+        m.assert_called_once_with("q", None, 100, model="qwen2.5:0.5b")

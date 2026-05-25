@@ -66,6 +66,20 @@ llm:
     max_daily_tokens: 100000        # Fail-safe daily limit
     batch_where_possible: true      # Batch multiple issues in one call
 
+  # Fallback provider — used automatically when the primary provider fails
+  # (e.g. API key not set, quota exceeded, network error).
+  #
+  # Option A: GitHub Models — zero extra setup; GITHUB_TOKEN is always available in Actions
+  fallback:
+    provider: github
+    model: gpt-4o-mini              # fast, cheap; covers all Scraut tasks well
+  #
+  # Option B: Ollama — fully local, no API key, works offline or on self-hosted runners
+  # Requires the setup-ollama composite action in your workflows (see docs).
+  # fallback:
+  #   provider: ollama
+  #   model: qwen2.5:0.5b           # 394 MB, sub-1B, best quality/size ratio
+
 agents:
   enabled: false                    # Set to true to activate agent mode
 

@@ -20,6 +20,9 @@ jobs:
 
       - run: pip install -r apps/automation/requirements.txt
 
+      - name: Set up Ollama (if configured)
+        uses: ./.github/actions/setup-ollama
+
       - name: Create sprint and planning PR
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

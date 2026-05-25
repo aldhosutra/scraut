@@ -15,6 +15,9 @@ jobs:
 
       - run: pip install -r apps/automation/requirements.txt
 
+      - name: Set up Ollama (if configured)
+        uses: ./.github/actions/setup-ollama
+
       - name: Prioritise unlabelled backlog items
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

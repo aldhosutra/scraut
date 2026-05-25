@@ -2,7 +2,7 @@
 platform/llm/client.py
 Swappable LLM provider. Reads provider from scraut.yml.
 Supports: anthropic, openai, gemini, ollama, github.
-All calls include token tracking and cost controls.
+All calls include token tracking, cost controls, and automatic fallback.
 """
 import os
 import logging
@@ -28,6 +28,28 @@ def _resolve_model(config: dict, use_small_model: bool) -> Optional[str]:
     return config.get("model")
 
 
+def _dispatch_provider(
+    provider: str,
+    prompt: str,
+    system: Optional[str],
+    max_tok: int,
+    model: Optional[str],
+) -> str:
+    """Route a single call to the named provider. Raises on any failure."""
+    if provider == "anthropic":
+        return _call_anthropic(prompt, system, max_tok, model=model)
+    elif provider == "openai":
+        return _call_openai(prompt, system, max_tok, model=model)
+    elif provider == "gemini":
+        return _call_gemini(prompt, system, max_tok, model=model)
+    elif provider == "ollama":
+        return _call_ollama(prompt, system, max_tok, model=model)
+    elif provider == "github":
+        return _call_github(prompt, system, max_tok, model=model)
+    else:
+        raise ValueError(f"Unknown LLM provider: {provider}")
+
+
 def complete(
     prompt: str,
     system: Optional[str] = None,
@@ -38,6 +60,9 @@ def complete(
 
     Pass use_small_model=True for simple tasks (summaries, classification, short DMs)
     to use llm.small_model when configured, reducing cost without sacrificing quality.
+
+    If the primary provider fails (e.g. missing API key), automatically retries with
+    llm.fallback if configured before returning ''.
     """
     global _daily_tokens_used
     config = get_llm_config()
@@ -51,20 +76,23 @@ def complete(
         return ""
 
     try:
-        if provider == "anthropic":
-            return _call_anthropic(prompt, system, max_tok, model=model)
-        elif provider == "openai":
-            return _call_openai(prompt, system, max_tok, model=model)
-        elif provider == "gemini":
-            return _call_gemini(prompt, system, max_tok, model=model)
-        elif provider == "ollama":
-            return _call_ollama(prompt, system, max_tok, model=model)
-        elif provider == "github":
-            return _call_github(prompt, system, max_tok, model=model)
-        else:
-            raise ValueError(f"Unknown LLM provider: {provider}")
+        return _dispatch_provider(provider, prompt, system, max_tok, model)
     except Exception as e:
-        logger.error(f"LLM call failed ({provider}): {e}")
+        fallback = config.get("fallback", {})
+        fb_provider = fallback.get("provider", "")
+        if fb_provider:
+            logger.warning(
+                f"LLM call failed ({provider}): {e}. "
+                f"Retrying with fallback provider: {fb_provider}"
+            )
+            try:
+                return _dispatch_provider(
+                    fb_provider, prompt, system, max_tok, fallback.get("model")
+                )
+            except Exception as e2:
+                logger.error(f"Fallback LLM also failed ({fb_provider}): {e2}")
+        else:
+            logger.error(f"LLM call failed ({provider}): {e}")
         return ""
 
 

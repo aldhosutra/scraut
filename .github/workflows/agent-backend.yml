@@ -21,6 +21,9 @@ jobs:
 
       - run: pip install -r apps/automation/requirements.txt
 
+      - name: Set up Ollama (if configured)
+        uses: ./.github/actions/setup-ollama
+
       - name: Check if agent mode enabled
         id: check
         run: |

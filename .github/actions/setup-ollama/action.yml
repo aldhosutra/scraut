@@ -1,0 +1,65 @@
+name: Set up Ollama (conditional)
+description: >
+  Installs Ollama and pulls the configured model when llm.provider or
+  llm.fallback.provider equals "ollama" in scraut.yml. A complete no-op
+  if Ollama is not configured — safe to add to any workflow.
+
+inputs:
+  config:
+    description: Path to scraut.yml
+    default: workspace/scraut.yml
+
+runs:
+  using: composite
+  steps:
+    - name: Detect Ollama requirement
+      id: detect
+      env:
+        SCRAUT_CONFIG: ${{ inputs.config }}
+      shell: bash
+      run: |
+        python3 - <<'PYEOF'
+        import yaml, os, sys
+        out_path = os.environ.get("GITHUB_OUTPUT", "/dev/stdout")
+        cfg_path = os.environ.get("SCRAUT_CONFIG", "workspace/scraut.yml")
+        try:
+            with open(cfg_path) as f:
+                cfg = yaml.safe_load(f)
+        except FileNotFoundError:
+            open(out_path, "a").write("ollama_needed=false\n")
+            sys.exit(0)
+        llm = cfg.get("llm", {})
+        providers = {llm.get("provider", ""), llm.get("fallback", {}).get("provider", "")}
+        with open(out_path, "a") as out:
+            if "ollama" not in providers:
+                out.write("ollama_needed=false\n")
+            else:
+                model = (
+                    llm["model"] if llm.get("provider") == "ollama"
+                    else llm.get("fallback", {}).get("model", "qwen2.5:0.5b")
+                )
+                out.write("ollama_needed=true\n")
+                out.write(f"model={model}\n")
+        PYEOF
+
+    - name: Install Ollama
+      if: steps.detect.outputs.ollama_needed == 'true'
+      shell: bash
+      run: curl -fsSL https://ollama.com/install.sh | sh
+
+    - name: Start Ollama daemon
+      if: steps.detect.outputs.ollama_needed == 'true'
+      shell: bash
+      run: |
+        nohup ollama serve &>/tmp/ollama.log &
+        disown $!
+        # Wait up to 30s for the API to become ready
+        for i in $(seq 1 15); do
+          curl -s http://localhost:11434/api/version >/dev/null 2>&1 && echo "Ollama ready" && break
+          sleep 2
+        done
+
+    - name: Pull model
+      if: steps.detect.outputs.ollama_needed == 'true'
+      shell: bash
+      run: ollama pull ${{ steps.detect.outputs.model }}

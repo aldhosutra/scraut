@@ -52,6 +52,9 @@ llm:
   cost_controls:
     max_daily_tokens: 100000
     batch_where_possible: false
+  fallback:
+    provider: github
+    model: gpt-4o-mini
 
 agents:
   enabled: false

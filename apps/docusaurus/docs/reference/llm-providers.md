@@ -137,30 +137,43 @@ llm:
 
 ---
 
-## Ollama (local, no API key)
+## Ollama (local and self-hosted, no API key)
 
 ```yaml
 llm:
   provider: ollama
-  model: llama3
-  base_url: ""   # defaults to http://localhost:11434
+  model: qwen2.5:0.5b     # recommended: fast, sub-1B, good quality
+  base_url: ""             # defaults to http://localhost:11434
 ```
 
 **API key:** None required
 
 **Requirements:**
-- Ollama installed and running locally: [ollama.ai](https://ollama.ai)
-- Model pulled: `ollama pull llama3`
+- Ollama installed and running: [ollama.ai](https://ollama.ai)
+- Model pulled: `ollama pull qwen2.5:0.5b`
 
-:::caution GitHub Actions limitation
-Ollama runs locally — GitHub Actions workflows **cannot** reach your local machine. Ollama is only usable when you run Scraut scripts locally (not via GitHub Actions). For GitHub Actions, use a cloud provider.
-:::
+**Recommended models:**
+| Model | Size | Notes |
+|-------|------|-------|
+| `qwen2.5:0.5b` | 394 MB | **Recommended** — best sub-1B quality, fast on CPU |
+| `llama3.2:1b` | 1.3 GB | Meta's small model, slightly better at longer outputs |
+| `llama3` | 4.7 GB | Full quality, needs more RAM |
 
-**Custom Ollama endpoint:**
+**GitHub Actions:** Ollama can run inside a GitHub Actions workflow by adding a setup step. Every LLM-using workflow in Scraut already includes the `setup-ollama` composite action — it's a no-op unless you configure `provider: ollama` or `fallback.provider: ollama`. When active, it installs Ollama, starts the daemon, and pulls your configured model automatically.
+
+```yaml
+# From any workflow — already included by default:
+- name: Set up Ollama (if configured)
+  uses: ./.github/actions/setup-ollama
+```
+
+This adds roughly 60–90 seconds to workflow runtime (install + pull `qwen2.5:0.5b`).
+
+**Custom Ollama endpoint (self-hosted runner or remote server):**
 ```yaml
 llm:
   provider: ollama
-  model: llama3
+  model: qwen2.5:0.5b
   base_url: "http://your-ollama-server:11434"
 ```
 
@@ -192,6 +205,41 @@ Leave `small_model: ""` to use the primary model for everything.
 
 ---
 
+## Automatic fallback
+
+When the primary provider fails — missing API key, quota exceeded, network error — Scraut retries once with `llm.fallback` before returning an empty string. No configuration is needed on your scripts; the fallback is wired into `complete()`.
+
+```yaml
+llm:
+  provider: anthropic
+  model: claude-sonnet-4-6
+  # Option A — GitHub Models: zero setup, GITHUB_TOKEN is always available in Actions
+  fallback:
+    provider: github
+    model: gpt-4o-mini
+
+  # Option B — Ollama: fully local, no API key, works offline or on self-hosted runners
+  # (requires the setup-ollama composite action in workflows — already included)
+  # fallback:
+  #   provider: ollama
+  #   model: qwen2.5:0.5b
+```
+
+**When to use each option:**
+
+| Fallback | Best for | Requirement |
+|---------|---------|------------|
+| `github` (default) | GitHub Actions, any team, free tier | None — `GITHUB_TOKEN` auto-provided |
+| `ollama:qwen2.5:0.5b` | Local dev, offline, data-privacy-sensitive | Ollama installed; ~60s added to CI |
+
+:::tip qwen2.5:0.5b — the best sub-1B model
+`qwen2.5:0.5b` (394 MB) is Alibaba's Qwen 2.5 0.5B model. At sub-1B parameters it outperforms much larger models on instruction-following benchmarks and runs comfortably on CPU. It covers all of Scraut's simple tasks — standup summaries, triage, coaching nudges — without a GPU.
+:::
+
+The fallback only applies to LLM calls. GitHub API calls (labels, comments, Projects) are not affected.
+
+---
+
 ## Choosing a provider
 
 | Factor | GitHub Models | Anthropic | OpenAI | Gemini | Ollama |
@@ -200,7 +248,7 @@ Leave `small_model: ""` to use the primary model for everything.
 | Speed | Fast | Fast | Fast | Fast | Varies |
 | Cost | Free (rate-limited) | Medium | Medium | Low | Free |
 | Privacy | Cloud | Cloud | Cloud | Cloud | Local |
-| GitHub Actions | ✓ (no setup) | ✓ | ✓ | ✓ | ✗ (local only) |
+| GitHub Actions | ✓ (no setup) | ✓ | ✓ | ✓ | ✓ (with setup-ollama step) |
 | Free tier | Yes | No | Limited | Yes (AI Studio) | Yes |
 
 **Recommendation:** Start with **GitHub Models** (`gpt-4o`) if you want zero setup — `GITHUB_TOKEN` is already available in every workflow. Switch to **Anthropic** (`claude-sonnet-4-6`) for the highest quality. Use **Gemini** or **Groq** (via OpenAI-compat) for low cost at scale.
