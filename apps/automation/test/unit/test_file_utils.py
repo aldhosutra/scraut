@@ -4,6 +4,7 @@ from pathlib import Path
 from scraut.platform.utils.file_utils import (
     atomic_write, create_if_not_exists, read_file,
     extract_section, extract_all_sections, extract_issue_numbers,
+    glob_md,
 )
 
 
@@ -86,3 +87,38 @@ def test_extract_all_sections_returns_dict():
 def test_extract_issue_numbers(text, expected):
     result = extract_issue_numbers(text)
     assert sorted(result) == sorted(expected)
+
+
+@pytest.mark.unit
+def test_glob_md_skips_underscore_files(tmp_path):
+    (tmp_path / "alice.md").write_text("real standup")
+    (tmp_path / "bob.md").write_text("real standup")
+    (tmp_path / "_example.md").write_text("scaffold — never process")
+    (tmp_path / "_template.md").write_text("scaffold — never process")
+    result = glob_md(tmp_path)
+    names = [f.name for f in result]
+    assert "alice.md" in names
+    assert "bob.md" in names
+    assert "_example.md" not in names
+    assert "_template.md" not in names
+
+
+@pytest.mark.unit
+def test_glob_md_returns_sorted_paths(tmp_path):
+    (tmp_path / "charlie.md").write_text("")
+    (tmp_path / "alice.md").write_text("")
+    (tmp_path / "bob.md").write_text("")
+    result = glob_md(tmp_path)
+    names = [f.name for f in result]
+    assert names == sorted(names)
+
+
+@pytest.mark.unit
+def test_glob_md_empty_directory(tmp_path):
+    assert glob_md(tmp_path) == []
+
+
+@pytest.mark.unit
+def test_glob_md_only_example_files(tmp_path):
+    (tmp_path / "_example.md").write_text("scaffold")
+    assert glob_md(tmp_path) == []

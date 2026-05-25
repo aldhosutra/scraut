@@ -19,7 +19,7 @@ from pathlib import Path
 from typing import Optional
 
 from scraut.platform.utils.config import get_current_sprint, get_workspace_root, get_sprint_folder, get_sprint_output_folder, format_sprint_num, get_folder_padding
-from scraut.platform.utils.file_utils import read_file, extract_section
+from scraut.platform.utils.file_utils import read_file, extract_section, glob_md
 from scraut.platform.github.api import get_github_client
 
 logger = logging.getLogger(__name__)
@@ -42,7 +42,7 @@ def _load_today_standups(sprint_num: int, today: str) -> list[str]:
     standup_dir = get_sprint_folder(sprint_num) / "standup" / today
     contents = []
     if standup_dir.exists():
-        for f in standup_dir.glob("*.md"):
+        for f in glob_md(standup_dir):
             contents.append(read_file(f))
     return contents
 

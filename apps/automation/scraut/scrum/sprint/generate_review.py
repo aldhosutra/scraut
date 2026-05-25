@@ -9,7 +9,7 @@ import logging
 from datetime import date
 from pathlib import Path
 from scraut.platform.utils.config import load_config, get_workspace_root, get_sprint_folder, get_sprint_output_folder, format_sprint_num, get_folder_padding
-from scraut.platform.utils.file_utils import atomic_write, read_file, extract_section
+from scraut.platform.utils.file_utils import atomic_write, read_file, extract_section, glob_md
 from scraut.platform.llm.client import complete
 from scraut.platform.llm.prompts import SPRINT_REVIEW_NARRATIVE, SYSTEM_SCRUM_ASSISTANT
 from scraut.scrum.sprint.calculate_velocity import calculate_sprint_velocity, calculate_rolling_velocity
@@ -46,7 +46,7 @@ def generate_review(sprint_num: int, repo_name: str, config: dict) -> None:
     decisions_dir = get_sprint_folder(sprint_num) / "decisions"
     decisions_text = ""
     if decisions_dir.exists():
-        for f in sorted(decisions_dir.glob("*.md")):
+        for f in glob_md(decisions_dir):
             decisions_text += read_file(f) + "\n"
 
     rolling = calculate_rolling_velocity(repo_name, num_sprints=3)

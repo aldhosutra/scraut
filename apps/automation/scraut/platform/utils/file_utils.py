@@ -97,3 +97,8 @@ def format_sprint_num(sprint_num: int, padding: int = 3) -> str:
 
 def sprint_folder_name(sprint_num: int, padding: int = 3) -> str:
     return f"sprint/{format_sprint_num(sprint_num, padding)}"
+
+
+def glob_md(directory: Path) -> list[Path]:
+    """Return sorted *.md files in directory, skipping _example.md and any _*.md scaffold files."""
+    return sorted(f for f in Path(directory).glob("*.md") if not f.name.startswith("_"))

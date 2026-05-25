@@ -9,7 +9,7 @@ import json
 import logging
 from pathlib import Path
 from scraut.platform.utils.config import load_config, get_workspace_root, get_current_sprint
-from scraut.platform.utils.file_utils import read_file, extract_section
+from scraut.platform.utils.file_utils import read_file, extract_section, glob_md
 from scraut.platform.github.api import (get_github_client, get_issues, get_sp_from_issue,
                                   add_label_to_issue, post_comment, ensure_label_exists)
 from scraut.platform.llm.client import complete_json
@@ -57,7 +57,7 @@ def read_active_milestone_goal(config: dict) -> str:
 
 def read_current_okr(config: dict) -> str:
     root = get_workspace_root()
-    okrs = sorted((root / "okr").glob("*.md"))
+    okrs = glob_md(root / "okr")
     if not okrs:
         return "No OKRs defined"
     return read_file(okrs[-1])[:500] or "No OKR content"

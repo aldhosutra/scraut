@@ -22,7 +22,7 @@ from datetime import date, timedelta
 from pathlib import Path
 from typing import Optional
 from scraut.platform.utils.config import load_config, get_workspace_root, get_current_sprint, get_sprint_folder, get_sprint_output_folder, format_sprint_num, get_folder_padding
-from scraut.platform.utils.file_utils import read_file, extract_section
+from scraut.platform.utils.file_utils import read_file, extract_section, glob_md
 from scraut.platform.github.api import get_github_client, get_sp_from_issue, get_issues
 from scraut.scrum.sprint.calculate_velocity import calculate_sprint_velocity, calculate_rolling_velocity
 
@@ -58,7 +58,7 @@ def blocker_frequency_detector(config: dict,
         for date_dir in standup_base.iterdir():
             if not date_dir.is_dir() or date_dir.name == "summary":
                 continue
-            for f in date_dir.glob("*.md"):
+            for f in glob_md(date_dir):
                 content = read_file(f)
                 blocker_text = extract_section(content, "Blockers")
                 if not blocker_text or blocker_text.lower().strip() == "none":
@@ -431,7 +431,7 @@ def sentiment_trend_detector(config: dict,
             for date_dir in sorted(standup_base.iterdir())[-3:]:  # Last 3 days
                 if not date_dir.is_dir():
                     continue
-                for f in date_dir.glob("*.md"):
+                for f in glob_md(date_dir):
                     content = read_file(f)
                     if content:
                         texts.append(content[:500])

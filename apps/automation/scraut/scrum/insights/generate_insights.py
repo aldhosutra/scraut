@@ -16,7 +16,7 @@ from datetime import date
 import re
 from pathlib import Path
 from scraut.platform.utils.config import load_config, get_workspace_root, get_current_sprint, get_sprint_folder, get_scraut_root, format_sprint_num, get_folder_padding
-from scraut.platform.utils.file_utils import atomic_write, read_file, extract_section
+from scraut.platform.utils.file_utils import atomic_write, read_file, extract_section, glob_md
 from scraut.scrum.sprint.calculate_velocity import (calculate_sprint_velocity,
                                                 calculate_rolling_velocity)
 
@@ -86,7 +86,7 @@ def generate_blocker_patterns(config: dict) -> None:
         for date_dir in standup_base.iterdir():
             if not date_dir.is_dir() or date_dir.name == "summary":
                 continue
-            for f in date_dir.glob("*.md"):
+            for f in glob_md(date_dir):
                 content = read_file(f)
                 blocker_text = extract_section(content, "Blockers")
                 if blocker_text and blocker_text.lower().strip() not in ("none", ""):
