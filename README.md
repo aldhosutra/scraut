@@ -1,4 +1,6 @@
-# Scraut — Scrum Automation
+<p align="center">
+  <img src="apps/docusaurus/static/img/scraut-banner.png" alt="Scraut — Scrum Automation" width="640" />
+</p>
 
 > **Text files in. Automation out.**
 

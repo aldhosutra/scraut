@@ -6,7 +6,7 @@ const path = require('path');
 const config = {
   title: 'Scraut',
   tagline: 'Fully automated Scrum, built on GitHub. Text files in — automation out.',
-  favicon: 'img/favicon.ico',
+  favicon: 'img/favicon.png',
 
   url: 'https://aldhosutra.github.io',
   baseUrl: '/scraut/',
@@ -50,12 +50,12 @@ const config = {
   themeConfig:
     /** @type {import('@docusaurus/preset-classic').ThemeConfig} */
     ({
-      image: 'img/scraut-social.png',
+      image: 'img/scraut-banner.png',
       navbar: {
         title: 'Scraut',
         logo: {
           alt: 'Scraut Logo',
-          src: 'img/logo.svg',
+          src: 'img/scraut-logo.png',
         },
         items: [
           {

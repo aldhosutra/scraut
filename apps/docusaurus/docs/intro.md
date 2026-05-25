@@ -4,6 +4,10 @@ slug: /
 sidebar_position: 1
 ---
 
+<p align="center">
+  <img src="/scraut/img/scraut-banner.png" alt="Scraut — Scrum Automation" width="560" />
+</p>
+
 # What is Scraut?
 
 **Scraut** (Scrum Automation) is a fully automated Scrum system built on GitHub infrastructure. It replaces Scrum-management apps and reduces ceremony overhead by treating **text files as the single source of truth** and letting GitHub Actions + an LLM do the rest.
