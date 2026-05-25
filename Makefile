@@ -1,4 +1,4 @@
-.PHONY: help init test test-unit test-integration test-act lint install
+.PHONY: help init test test-unit test-integration test-act lint install docs docs-serve
 
 PYTHON := python3
 PYTEST  := cd apps/automation && python -m pytest
