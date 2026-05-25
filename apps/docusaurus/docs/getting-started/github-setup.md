@@ -118,9 +118,9 @@ Without this deployment, the form HTML is still served (team members can see it)
 
 ---
 
-## Step 5: Set up GitHub Projects (optional but recommended)
+## Step 5: Set up GitHub Projects (board sync is on by default)
 
-The Visibility Engine syncs sprint state to a GitHub Projects board.
+The Visibility Engine syncs sprint state to a GitHub Projects board alongside the HTML portal. Board sync is **enabled by default** (`sync_board: true`) — you just need to create the board and add its number to `scraut.yml`.
 
 1. Go to **Projects** → **New project** → **Board** template
 2. Name it something like "Sprint Board"
@@ -129,8 +129,22 @@ The Visibility Engine syncs sprint state to a GitHub Projects board.
 
 ```yaml
 portal:
-  project_number: 5   # add this field
+  sync_board: true       # already the default — shown for clarity
+  project_number: 5      # replace with your board's number
 ```
+
+Until `project_number` is set, the visibility engine logs a warning and skips board sync — but the HTML portal still generates and deploys normally.
+
+:::tip Skip board sync entirely
+If you don't use GitHub Projects and want to suppress the warning:
+
+```yaml
+portal:
+  sync_board: false
+```
+
+The HTML portal (`apps/portal/index.html`) always generates regardless of this setting.
+:::
 
 ---
 

@@ -18,6 +18,7 @@ sprint:
   timezone: "UTC"         # string — IANA timezone identifier
   capacity_buffer: 0.85   # float 0–1 — Sprint capacity safety factor
   current_sprint: 1       # int — Auto-managed; do not edit manually
+  folder_padding: 3       # int — Zero-padding width for sprint folder names
 ```
 
 | Field | Default | Notes |
@@ -28,6 +29,7 @@ sprint:
 | `timezone` | `"UTC"` | Use `pytz`-compatible IANA string |
 | `capacity_buffer` | `0.85` | `planning_capacity = velocity × buffer` |
 | `current_sprint` | `1` | Incremented automatically by `close_sprint.py` |
+| `folder_padding` | `3` | Digits in sprint folder names: `3` → `sprint/001/`, `4` → `sprint/0001/`. Widen with `scraut sprint repad <N>`. Never reduce. |
 
 ---
 
@@ -166,11 +168,41 @@ notifications:
 
 ```yaml
 portal:
-  enabled: boolean      # Enable visibility portal
-  title: string         # Dashboard title
-  public: boolean       # false = private GitHub Pages (requires Team/Enterprise plan)
-  refresh_minutes: int  # How often board state syncs from text files
+  enabled: boolean        # Enable visibility portal
+  title: string           # Dashboard title
+  public: boolean         # false = private GitHub Pages (requires Team/Enterprise plan)
+  refresh_minutes: int    # How often board state syncs from text files
+  sync_board: boolean     # Sync GitHub Projects board alongside HTML portal (default: true)
+  project_number: int     # GitHub Projects board number — required for board sync
+                          # Find it in the URL: github.com/orgs/your-org/projects/N
 ```
+
+| Field | Default | Notes |
+|-------|---------|-------|
+| `enabled` | `true` | Master switch for portal generation |
+| `title` | `"<org> Dashboard"` | Shown in the portal header |
+| `public` | `true` | Private Pages requires GitHub Team/Enterprise plan |
+| `refresh_minutes` | `30` | Cron interval for the visibility engine |
+| `sync_board` | `true` | Set to `false` to disable GitHub Projects board sync while keeping the HTML portal |
+| `project_number` | *(unset)* | Required when `sync_board: true`. Without it, board sync is skipped with a warning. HTML portal always generates regardless. |
+
+:::tip Board sync is on by default
+When `sync_board: true`, the visibility engine updates your GitHub Projects board on every run. Set `project_number` to the board number from the URL (e.g. `https://github.com/orgs/myorg/projects/5` → `project_number: 5`).
+
+To turn off board sync entirely without disabling the portal:
+```yaml
+portal:
+  sync_board: false
+```
+:::
+
+:::info HTML portal vs. GitHub Projects board
+These are two separate outputs from the same pipeline:
+- **HTML portal** (`apps/portal/index.html`) — always generated, deployed to GitHub Pages
+- **GitHub Projects board** — only updated if `sync_board: true` AND `project_number` is set
+
+Both are derived from text files. The board is never read to make decisions.
+:::
 
 ---
 

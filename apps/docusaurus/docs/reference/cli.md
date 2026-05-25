@@ -187,17 +187,38 @@ scraut sync --dry-run
 Sprint management shortcuts.
 
 ```bash
-scraut sprint status    # show current sprint number and date range
-scraut sprint scaffold  # alias for scraut sync
+scraut sprint status              # show current sprint number and date range
+scraut sprint scaffold            # alias for scraut sync
+scraut sprint repad <N>           # widen sprint folder padding to N digits
+scraut sprint repad <N> --dry-run # preview what repad would rename
 ```
 
 **`scraut sprint status` output:**
 ```
-  Current sprint: 02
+  Current sprint: 001
   Period:         2026-06-09 → 2026-06-22
-  Folder:         workspace/sprint/02/
+  Folder:         workspace/sprint/001/
+  Padding:        3 digits
   Today:          2026-06-10
 ```
+
+#### `scraut sprint repad`
+
+Widens the zero-padding width used for sprint folder names and renames all existing `workspace/sprint/NNN/` and `.scraut/sprint/NNN/` directories to the new width.
+
+```bash
+# Preview without making changes
+scraut sprint repad 4 --dry-run
+
+# Apply — renames sprint/001/ → sprint/0001/, etc.
+scraut sprint repad 4
+```
+
+**Validation rules:**
+- New padding must be **greater than** the current padding (widening only — narrowing breaks lexicographic sort order)
+- New padding must fit the current sprint number (e.g. sprint 1000 requires at least 4 digits)
+
+After running `repad`, Scraut prints the GitHub CLI commands to rename the matching sprint labels (e.g. `sprint-001` → `sprint-0001`) and the git commit command to push the renamed folders.
 
 ---
 

@@ -59,15 +59,29 @@ Standup files change (or 30-min cron fires)
   │     Derives sprint board state: to-do / in-progress / done
   │     NEVER reads GitHub Projects board (text files are source of truth)
   │
-  ├─ sync_board.py
+  ├─ sync_board.py  [if portal.sync_board: true AND project_number is set]
   │     Updates GitHub Projects board columns from derived state
+  │     Skips with warning if project_number not configured
   │
-  └─ generate_portal.py
+  └─ generate_portal.py  [always runs]
         Renders apps/portal/index.html   ← full dashboard HTML
         Writes   apps/portal/data.json   ← raw sprint data
         Writes   apps/portal/style.css
         Commits all three with [skip ci]
 ```
+
+:::info Board sync vs. HTML portal
+The HTML portal **always generates** on every visibility engine run.
+
+GitHub Projects board sync is **on by default** (`sync_board: true`) but requires `portal.project_number` to be set. Without it, board sync is skipped and a warning is logged — the portal is unaffected.
+
+To disable board sync entirely:
+```yaml
+# workspace/scraut.yml
+portal:
+  sync_board: false
+```
+:::
 
 ### 2. Portal Publish
 

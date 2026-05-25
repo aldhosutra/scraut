@@ -48,7 +48,33 @@ If you're mid-sprint (not starting fresh), you can skip triggering sprint-planni
 
 ### Do I need a GitHub Projects board?
 
-No. Scraut can create and sync a GitHub Projects board for the visibility portal, but the text files in `workspace/` are the source of truth. The board is a derived view. All planning, standup, and reporting workflows read from text files, not the board.
+No, but board sync is **on by default**. The HTML portal always generates and deploys regardless. The GitHub Projects board sync is a second output from the same pipeline — it updates board columns to match the derived sprint state.
+
+To activate board sync, set `project_number` in `scraut.yml`:
+```yaml
+portal:
+  sync_board: true       # default — no need to add unless you changed it
+  project_number: 5      # your board's number from the GitHub Projects URL
+```
+
+To turn board sync off entirely and suppress the warning:
+```yaml
+portal:
+  sync_board: false
+```
+
+All planning, standup, and reporting workflows read from text files, not the board. The board is always a derived view, never a source of truth.
+
+### What is `portal.project_number`?
+
+It's the number at the end of your GitHub Projects URL:
+
+```
+https://github.com/orgs/myorg/projects/5
+                                        ↑ this is project_number: 5
+```
+
+Go to **Projects** → open your board → copy the number from the URL. Without this value, board sync is skipped (HTML portal still works).
 
 ### What LLM do I need?
 
