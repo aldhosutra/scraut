@@ -578,6 +578,161 @@ def init():
     click.echo("")
 
 
+@cli.command()
+@click.option("--dry-run", is_flag=True, help="Print what would be created without writing files")
+def sync(dry_run):
+    """Sync workspace folder structure with workspace/scraut.yml.
+
+    Run this after any config change that affects workspace layout:
+    adding or removing team members, changing the current sprint number, etc.
+
+    What it does:
+      - Creates today's standup file for any member who doesn't have one
+      - Creates retro file for any member who doesn't have one this sprint
+      - Creates sprint folder structure if it doesn't exist for the current sprint
+
+    Does NOT create GitHub milestones (use sprint-planning workflow for that).
+    Safe to run repeatedly — never overwrites existing files.
+
+    Example: scraut sync
+    Example: scraut sync --dry-run
+    """
+    from scraut.platform.utils.config import load_config, get_current_sprint, get_sprint_folder, get_sprint_output_folder
+
+    config = load_config()
+    sprint_num = get_current_sprint()
+    today = date.today().isoformat()
+    members = config["team"]["members"]
+
+    sprint_folder = get_sprint_folder(sprint_num)
+    sprint_output_folder = get_sprint_output_folder(sprint_num)
+
+    created = []
+    skipped = []
+
+    def _ensure(path: Path, content: str, label: str) -> None:
+        if path.exists():
+            skipped.append(label)
+        elif dry_run:
+            click.echo(f"  [dry-run] would create  {path}")
+        else:
+            path.parent.mkdir(parents=True, exist_ok=True)
+            path.write_text(content)
+            created.append(label)
+            click.echo(f"  created  {path}")
+
+    # ── Sprint folder structure ───────────────────────────────────────────────
+    workspace_subdirs = ["standup", "retrospective", "grooming", "decisions", "adr"]
+    output_subdirs = ["standup/summary", "review", "incidents", "code"]
+    for subdir in workspace_subdirs:
+        p = sprint_folder / subdir
+        if not p.exists():
+            if dry_run:
+                click.echo(f"  [dry-run] would create  {p}/")
+            else:
+                p.mkdir(parents=True, exist_ok=True)
+                created.append(str(p))
+                click.echo(f"  created  {p}/")
+    for subdir in output_subdirs:
+        p = sprint_output_folder / subdir
+        if not p.exists():
+            if dry_run:
+                click.echo(f"  [dry-run] would create  {p}/")
+            else:
+                p.mkdir(parents=True, exist_ok=True)
+                (p / ".gitkeep").touch()
+                created.append(str(p))
+                click.echo(f"  created  {p}/")
+
+    # ── meta.md ──────────────────────────────────────────────────────────────
+    team_names = ", ".join(m["display"] for m in members)
+    _ensure(
+        sprint_folder / "meta.md",
+        f"# Sprint {sprint_num}\n"
+        f"- Period: [Set when sprint starts]\n"
+        f"- Goal: [Set during sprint planning]\n"
+        f"- Team: {team_names}\n"
+        f"- Committed: TBD story points across TBD issues\n"
+        f"- Capacity note: [Check team/capacity.md for OOO]\n\n"
+        f"## Issues in sprint\n"
+        f"| Issue | Title | Epic | SP | Assignee |\n"
+        f"|-------|-------|------|----|----------|\n",
+        f"sprint/{sprint_num:02d}/meta.md",
+    )
+
+    # ── grooming/backlog-ideas.md ─────────────────────────────────────────────
+    _ensure(
+        sprint_folder / "grooming" / "backlog-ideas.md",
+        "# Backlog Ideas\n<!-- Append new ideas below. Anyone can add. -->\n\n",
+        f"sprint/{sprint_num:02d}/grooming/backlog-ideas.md",
+    )
+
+    # ── Per-member: today's standup + retro ──────────────────────────────────
+    for member in members:
+        login = member["login"]
+        display = member["display"]
+
+        _ensure(
+            sprint_folder / "standup" / today / f"{login}.md",
+            _STANDUP_TEMPLATE.format(
+                display_name=display, sprint_num=sprint_num, date=today, login=login,
+            ),
+            f"standup/{today}/{login}.md",
+        )
+
+        _ensure(
+            sprint_folder / "retrospective" / f"{login}.md",
+            _RETRO_TEMPLATE.format(display_name=display, sprint_num=sprint_num),
+            f"retrospective/{login}.md",
+        )
+
+    # ── Summary ──────────────────────────────────────────────────────────────
+    if dry_run:
+        click.echo(f"\n  dry-run complete — no files were written")
+    elif created:
+        click.echo(f"\n  {len(created)} item(s) created, {len(skipped)} already existed")
+        click.echo("  Commit the new files:")
+        click.echo(f"    git add workspace/ .scraut/ && git commit -m 'chore: sync sprint {sprint_num:02d} [skip ci]' && git push")
+    else:
+        click.echo(f"\n  Already in sync — sprint {sprint_num:02d} workspace is complete for {today}")
+
+
+@cli.command()
+@click.argument("subcommand", required=False)
+@click.pass_context
+def sprint(ctx, subcommand):
+    """Sprint management shortcuts.
+
+    \b
+    scraut sprint status    — show current sprint number and dates
+    scraut sprint scaffold  — same as 'scraut sync' (alias)
+    """
+    if subcommand in (None, "status"):
+        try:
+            from scraut.platform.utils.config import load_config, get_current_sprint
+            from scraut.platform.utils.date_utils import get_sprint_dates
+
+            config = load_config()
+            sprint_num = get_current_sprint()
+            start, end = get_sprint_dates(sprint_num, config)
+
+            click.echo(f"\n  Current sprint: {sprint_num:02d}")
+            click.echo(f"  Period:         {start} → {end}")
+            click.echo(f"  Folder:         workspace/sprint/{sprint_num:02d}/")
+            click.echo(f"  Today:          {date.today().isoformat()}")
+            click.echo("")
+
+        except Exception as e:
+            click.echo(f"Error: {e}", err=True)
+
+    elif subcommand == "scaffold":
+        ctx.invoke(sync)
+
+    else:
+        click.echo(f"Unknown subcommand: {subcommand}")
+        click.echo("Usage: scraut sprint [status|scaffold]")
+
+
 def main():
     cli()
 

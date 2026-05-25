@@ -249,3 +249,138 @@ class TestInitCommand:
         monkeypatch.delenv("GITHUB_TOKEN", raising=False)
         result = CliRunner().invoke(cli, ["init"], input=_init_input())
         assert "standup" in result.output.lower()
+
+
+def _make_scraut_yml(tmp_path, members=None, sprint=1):
+    """Write a minimal workspace/scraut.yml for sync/sprint tests."""
+    if members is None:
+        members = [{"login": "alice", "display": "Alice", "role": "developer",
+                    "slack_id": "", "email": ""}]
+    import yaml
+    cfg = {
+        "sprint": {"length_days": 14, "start_day": "monday", "start_time": "09:00",
+                   "timezone": "UTC", "capacity_buffer": 0.85, "current_sprint": sprint},
+        "team": {"members": members, "product_owner": members[0]["login"],
+                 "scrum_master": members[0]["login"], "slack_channel": "#scraut-bot"},
+        "ceremonies": {"planning": True, "standup": True, "grooming": True,
+                       "review": True, "retrospective": True, "estimation": True},
+        "definition_of_done": ["CI passing"],
+        "repos": [],
+        "llm": {"provider": "anthropic", "model": "claude-sonnet-4-6",
+                "base_url": "", "max_tokens": 1000,
+                "cost_controls": {"max_daily_tokens": 100000, "batch_where_possible": True}},
+        "agents": {"enabled": False},
+        "notifications": {"slack_webhook": "", "morning_dm": True,
+                          "weekly_email": False, "stakeholder_emails": []},
+        "portal": {"enabled": True, "title": "Test", "public": True, "refresh_minutes": 30},
+        "suggestions": {"enabled": True, "min_evidence_count": 3, "measurement_sprints": 2},
+        "paths": {"workspace": "workspace", "scraut": ".scraut", "portal": "apps/portal"},
+    }
+    ws = tmp_path / "workspace"
+    ws.mkdir(exist_ok=True)
+    (ws / "scraut.yml").write_text(yaml.dump(cfg))
+
+
+@pytest.mark.unit
+class TestSyncCommand:
+    def test_sync_creates_standup_for_today(self, tmp_path, monkeypatch):
+        monkeypatch.chdir(tmp_path)
+        _make_scraut_yml(tmp_path)
+        from datetime import date
+        today = date.today().isoformat()
+        result = CliRunner().invoke(cli, ["sync"])
+        assert result.exit_code == 0, result.output
+        standup = tmp_path / "workspace" / "sprint" / "01" / "standup" / today / "alice.md"
+        assert standup.exists()
+
+    def test_sync_creates_retro_for_member(self, tmp_path, monkeypatch):
+        monkeypatch.chdir(tmp_path)
+        _make_scraut_yml(tmp_path)
+        CliRunner().invoke(cli, ["sync"])
+        retro = tmp_path / "workspace" / "sprint" / "01" / "retrospective" / "alice.md"
+        assert retro.exists()
+        assert "Went well" in retro.read_text()
+
+    def test_sync_creates_sprint_folder_structure(self, tmp_path, monkeypatch):
+        monkeypatch.chdir(tmp_path)
+        _make_scraut_yml(tmp_path)
+        CliRunner().invoke(cli, ["sync"])
+        assert (tmp_path / "workspace" / "sprint" / "01" / "grooming").exists()
+        assert (tmp_path / "workspace" / "sprint" / "01" / "retrospective").exists()
+        assert (tmp_path / ".scraut" / "sprint" / "01" / "standup" / "summary").exists()
+
+    def test_sync_creates_meta_if_missing(self, tmp_path, monkeypatch):
+        monkeypatch.chdir(tmp_path)
+        _make_scraut_yml(tmp_path)
+        CliRunner().invoke(cli, ["sync"])
+        meta = tmp_path / "workspace" / "sprint" / "01" / "meta.md"
+        assert meta.exists()
+        assert "Sprint 1" in meta.read_text()
+
+    def test_sync_does_not_overwrite_existing_standup(self, tmp_path, monkeypatch):
+        monkeypatch.chdir(tmp_path)
+        _make_scraut_yml(tmp_path)
+        from datetime import date
+        today = date.today().isoformat()
+        standup = tmp_path / "workspace" / "sprint" / "01" / "standup" / today
+        standup.mkdir(parents=True, exist_ok=True)
+        existing = standup / "alice.md"
+        existing.write_text("my custom content")
+        CliRunner().invoke(cli, ["sync"])
+        assert existing.read_text() == "my custom content"
+
+    def test_sync_dry_run_writes_nothing(self, tmp_path, monkeypatch):
+        monkeypatch.chdir(tmp_path)
+        _make_scraut_yml(tmp_path)
+        result = CliRunner().invoke(cli, ["sync", "--dry-run"])
+        assert result.exit_code == 0, result.output
+        assert "dry-run" in result.output
+        assert not (tmp_path / "workspace" / "sprint").exists()
+
+    def test_sync_new_member_mid_sprint(self, tmp_path, monkeypatch):
+        monkeypatch.chdir(tmp_path)
+        # Start with just alice
+        _make_scraut_yml(tmp_path)
+        CliRunner().invoke(cli, ["sync"])
+        # Add bob mid-sprint by updating config
+        _make_scraut_yml(tmp_path, members=[
+            {"login": "alice", "display": "Alice", "role": "developer", "slack_id": "", "email": ""},
+            {"login": "bob",   "display": "Bob",   "role": "developer", "slack_id": "", "email": ""},
+        ])
+        from datetime import date
+        today = date.today().isoformat()
+        CliRunner().invoke(cli, ["sync"])
+        assert (tmp_path / "workspace" / "sprint" / "01" / "retrospective" / "bob.md").exists()
+        assert (tmp_path / "workspace" / "sprint" / "01" / "standup" / today / "bob.md").exists()
+
+    def test_sync_idempotent(self, tmp_path, monkeypatch):
+        monkeypatch.chdir(tmp_path)
+        _make_scraut_yml(tmp_path)
+        r1 = CliRunner().invoke(cli, ["sync"])
+        r2 = CliRunner().invoke(cli, ["sync"])
+        assert r1.exit_code == 0
+        assert r2.exit_code == 0
+        assert "Already in sync" in r2.output
+
+
+@pytest.mark.unit
+class TestSprintCommand:
+    def test_sprint_status_shows_sprint_number(self, tmp_path, monkeypatch):
+        monkeypatch.chdir(tmp_path)
+        _make_scraut_yml(tmp_path, sprint=3)
+        result = CliRunner().invoke(cli, ["sprint", "status"])
+        assert result.exit_code == 0, result.output
+        assert "3" in result.output
+
+    def test_sprint_scaffold_alias_works(self, tmp_path, monkeypatch):
+        monkeypatch.chdir(tmp_path)
+        _make_scraut_yml(tmp_path)
+        result = CliRunner().invoke(cli, ["sprint", "scaffold"])
+        assert result.exit_code == 0, result.output
+        assert (tmp_path / "workspace" / "sprint" / "01").exists()
+
+    def test_sprint_unknown_subcommand(self, tmp_path, monkeypatch):
+        monkeypatch.chdir(tmp_path)
+        _make_scraut_yml(tmp_path)
+        result = CliRunner().invoke(cli, ["sprint", "foobar"])
+        assert "Unknown subcommand" in result.output

@@ -138,6 +138,69 @@ scraut blocker "Design mockup for profile page needed before I can continue #31"
 
 ---
 
+### `scraut sync`
+
+Syncs the workspace folder structure with `workspace/scraut.yml`. Run this after any config change that affects workspace layout.
+
+```bash
+scraut sync
+# preview without writing anything:
+scraut sync --dry-run
+```
+
+**What it does:**
+- Creates today's standup file for any team member who doesn't have one yet
+- Creates a retro file for any member who doesn't have one for the current sprint
+- Creates sprint folder structure (`standup/`, `retrospective/`, `grooming/`, `decisions/`, `adr/`) if it doesn't exist
+- Creates `.scraut/sprint/NN/` output dirs if missing
+- Creates `meta.md` and `grooming/backlog-ideas.md` if missing
+
+**What it does NOT do:**
+- Never overwrites files that already exist (safe to run repeatedly)
+- Does not create GitHub milestones (use the sprint-planning workflow for that)
+- Does not require `GITHUB_TOKEN`
+
+**Common scenarios:**
+
+```bash
+# Added a new team member to scraut.yml mid-sprint
+scraut sync
+# → creates their standup file for today and their retro file
+
+# Just changed current_sprint in scraut.yml after sprint transition
+scraut sync
+# → creates the sprint/NN/ folder structure for the new sprint number
+
+# Check what sync would do without actually doing it
+scraut sync --dry-run
+```
+
+**Options:**
+```
+--dry-run   Print what would be created without writing any files
+```
+
+---
+
+### `scraut sprint`
+
+Sprint management shortcuts.
+
+```bash
+scraut sprint status    # show current sprint number and date range
+scraut sprint scaffold  # alias for scraut sync
+```
+
+**`scraut sprint status` output:**
+```
+  Current sprint: 02
+  Period:         2026-06-09 → 2026-06-22
+  Folder:         workspace/sprint/02/
+  Today:          2026-06-10
+```
+
+---
+
 ### `scraut velocity`
 
 Shows sprint velocity data.

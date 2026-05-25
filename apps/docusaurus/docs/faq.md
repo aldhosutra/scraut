@@ -42,18 +42,44 @@ Any of: Anthropic Claude, OpenAI GPT-4o, Google Gemini, Ollama (local), or any O
 
 ## Team management
 
+### How does the sprint/NN folder get created?
+
+Automatically, when you trigger the **sprint-planning** workflow from the Actions tab. It calls `create_sprint.py` which creates:
+- `workspace/sprint/NN/` with `standup/`, `retrospective/`, `grooming/`, `decisions/`, `adr/` subdirs
+- `.scraut/sprint/NN/` output dirs
+- `workspace/sprint/NN/meta.md` with period and team info
+- `workspace/sprint/NN/grooming/backlog-ideas.md`
+- A GitHub milestone named `Sprint NN`
+
+You never create the sprint folder by hand. Trigger sprint-planning from the Actions tab, and everything is scaffolded.
+
+### How does the daily standup folder (`standup/YYYY-MM-DD/`) get created?
+
+Automatically, by the **template-reset** workflow. It runs every weekday at 1:55 AM UTC (before your team starts work) and creates:
+```
+workspace/sprint/NN/standup/YYYY-MM-DD/alice.md
+workspace/sprint/NN/standup/YYYY-MM-DD/bob.md
+```
+One file per team member, pre-filled with the standup template. The workflow commits these with `[skip ci]` so they don't trigger the summary workflow. Files that already exist (e.g., if someone submitted earlier) are never overwritten.
+
+### What if my standup file wasn't created automatically today?
+
+Two options:
+
+1. **Manual trigger**: Go to Actions → `Scraut — Daily Template Reset` → Run workflow
+2. **CLI**: Run `scraut sync` — it creates today's standup file for any member who doesn't have one yet, without touching files that already exist
+
 ### How do I add a team member mid-sprint?
 
 1. Add them to `team.members` in `workspace/scraut.yml`
-2. Create their standup file for today:
-   ```
-   workspace/sprint/NN/standup/YYYY-MM-DD/newmember.md
-   ```
-3. Create their retro file:
-   ```
-   workspace/sprint/NN/retrospective/newmember.md
-   ```
-4. Commit and push — they're now included in all subsequent summaries
+2. Run `scraut sync` — it creates their standup file for today and their retro file, without touching anyone else's files
+3. Commit and push — they're now included in all subsequent summaries
+
+```bash
+# After editing scraut.yml:
+scraut sync
+git add workspace/ && git commit -m "chore: add bob to sprint 02 [skip ci]" && git push
+```
 
 ### How do I remove a team member?
 
@@ -124,6 +150,18 @@ Channel posts only need `SLACK_WEBHOOK`. DMs to individuals need the bot token.
 ---
 
 ## Configuration
+
+### How do I apply config changes to the workspace?
+
+Edit `workspace/scraut.yml` directly (it's a plain YAML file), then run `scraut sync`:
+
+```bash
+# Example: added a team member, changed sprint number, etc.
+scraut sync          # scaffolds anything missing based on current config
+scraut sync --dry-run  # preview first
+```
+
+`scraut sync` is safe to run any time — it only creates files that are missing and never overwrites existing ones.
 
 ### Can I change the sprint length after starting?
 

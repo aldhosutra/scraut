@@ -10,7 +10,9 @@ The standup is Scraut's core daily ceremony. Instead of a synchronous meeting, e
 
 ## The standup file
 
-Each standup file follows a consistent template. It's created automatically each morning in:
+Each standup file follows a consistent template. It's created **automatically each morning** by the `template-reset` workflow (runs at 1:55 AM UTC on weekdays, before your team starts work). You never need to create the file manually.
+
+The file lives at:
 
 ```
 workspace/sprint/NN/standup/YYYY-MM-DD/[your-github-login].md
