@@ -7,7 +7,7 @@ import argparse
 import logging
 import re
 from pathlib import Path
-from scraut.platform.utils.config import load_config, get_repo_root
+from scraut.platform.utils.config import load_config, get_repo_root, format_sprint_num, get_folder_padding
 from scraut.platform.utils.file_utils import read_file, atomic_write
 from scraut.platform.github.api import (get_github_client, get_issues, get_sp_from_issue,
                                   add_label_to_issue, remove_label_from_issue,
@@ -29,11 +29,11 @@ def close_sprint(sprint_num: int, repo_name: str, config: dict) -> dict:
     """
     g = get_github_client()
     repo = g.get_repo(repo_name)
-    sprint_label = f"sprint-{sprint_num:02d}"
+    sprint_label = f"sprint-{format_sprint_num(sprint_num, get_folder_padding())}"
 
     # Close the GitHub milestone
     for ms in repo.get_milestones(state="open"):
-        if ms.title == f"Sprint {sprint_num:02d}":
+        if ms.title == f"Sprint {format_sprint_num(sprint_num, get_folder_padding())}":
             ms.edit(state="closed")
             logger.info(f"Closed milestone: {ms.title}")
             break

@@ -8,7 +8,7 @@ import argparse
 import logging
 from datetime import date
 from pathlib import Path
-from scraut.platform.utils.config import load_config, get_workspace_root, get_sprint_folder, get_sprint_output_folder
+from scraut.platform.utils.config import load_config, get_workspace_root, get_sprint_folder, get_sprint_output_folder, format_sprint_num, get_folder_padding
 from scraut.platform.utils.file_utils import atomic_write, read_file, extract_section
 from scraut.platform.llm.client import complete
 from scraut.platform.llm.prompts import SPRINT_REVIEW_NARRATIVE, SYSTEM_SCRUM_ASSISTANT
@@ -24,7 +24,7 @@ def generate_review(sprint_num: int, repo_name: str, config: dict) -> None:
     root = get_workspace_root()
     g = get_github_client()
     repo = g.get_repo(repo_name)
-    sprint_label = f"sprint-{sprint_num:02d}"
+    sprint_label = f"sprint-{format_sprint_num(sprint_num, get_folder_padding())}"
 
     velocity = calculate_sprint_velocity(sprint_num, repo_name)
     meta = read_file(get_sprint_folder(sprint_num) / "meta.md")
@@ -72,7 +72,7 @@ def generate_review(sprint_num: int, repo_name: str, config: dict) -> None:
 
     review_content = (
         f"<!-- BOT-GENERATED -->\n"
-        f"# Sprint {sprint_num:02d} Review\n"
+        f"# Sprint {format_sprint_num(sprint_num, get_folder_padding())} Review\n"
         f"*Generated: {date.today().isoformat()}*\n\n"
         f"## Summary\n\n{narrative}\n\n"
         f"## Metrics\n\n"
@@ -95,7 +95,7 @@ def generate_review(sprint_num: int, repo_name: str, config: dict) -> None:
     if webhook:
         post_to_slack(
             webhook,
-            f"✅ *Sprint {sprint_num:02d} Review*\n"
+            f"✅ *Sprint {format_sprint_num(sprint_num, get_folder_padding())} Review*\n"
             f"{velocity['completed_sp']}/{velocity['planned_sp']} sp "
             f"({round(velocity['completion_rate']*100)}%) · "
             f"{len(closed)}/{len(all_issues)} issues\n\n"

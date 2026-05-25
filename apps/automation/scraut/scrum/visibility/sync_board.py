@@ -14,7 +14,7 @@ from scraut.platform.github.projects import (
     get_field_ids, get_project_id, get_project_items,
     update_item_status, update_item_text_field,
 )
-from scraut.platform.utils.config import get_current_sprint, load_config
+from scraut.platform.utils.config import get_current_sprint, load_config, format_sprint_num, get_folder_padding
 from scraut.scrum.visibility.derive_state import IssueState, StateDeriver
 
 logging.basicConfig(level=logging.INFO)
@@ -32,21 +32,34 @@ def _get_project_number(config: dict) -> Optional[int]:
     return config.get("portal", {}).get("project_number")
 
 
+def _board_sync_enabled(config: dict) -> bool:
+    # Default True — board sync is on unless explicitly disabled
+    return config.get("portal", {}).get("sync_board", True)
+
+
 def sync_board(config: dict, dry_run: bool = False) -> dict[int, str]:
     """
     Derive state for all in-sprint issues and update the GitHub Projects board.
     Returns mapping of issue_number → new_state string.
     """
+    if not _board_sync_enabled(config):
+        logger.info("portal.sync_board is false — skipping board sync")
+        return {}
+
     repo_name = _get_repo_name()
     project_number = _get_project_number(config)
     if not project_number:
-        logger.warning("portal.project_number not set in scraut.yml — skipping board sync")
+        logger.warning(
+            "portal.sync_board is true but portal.project_number is not set — skipping board sync. "
+            "Add `project_number: <N>` to the portal section of workspace/scraut.yml "
+            "(find N in your GitHub Projects URL: github.com/orgs/your-org/projects/N)"
+        )
         return {}
 
     gh = get_github_client()
     repo = gh.get_repo(repo_name)
     sprint_num = get_current_sprint()
-    sprint_label = f"sprint-{sprint_num:02d}"
+    sprint_label = f"sprint-{format_sprint_num(sprint_num, get_folder_padding())}"
 
     issues = get_issues(repo, labels=[sprint_label], state="all")
     logger.info(f"Found {len(issues)} issues with label {sprint_label}")

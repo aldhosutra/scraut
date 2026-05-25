@@ -12,7 +12,7 @@ import json
 import logging
 from datetime import date
 from pathlib import Path
-from scraut.platform.utils.config import load_config, get_workspace_root, get_current_sprint, get_sprint_folder
+from scraut.platform.utils.config import load_config, get_workspace_root, get_current_sprint, get_sprint_folder, format_sprint_num, get_folder_padding
 from scraut.platform.utils.file_utils import read_file, atomic_write, extract_section
 from scraut.platform.github.api import (get_github_client, get_issues, get_sp_from_issue,
                                  add_label_to_issue, post_comment, create_issue)
@@ -26,7 +26,7 @@ logger = logging.getLogger(__name__)
 
 ORCHESTRATOR_STANDUP_TEMPLATE = """# Standup — agent-orchestrator
 <!--
-  Sprint: sprint-{sprint_num:02d}
+  Sprint: sprint-{sprint_num}
   Date: {date}
   Author: agent-orchestrator
   Auto-generated: yes
@@ -123,7 +123,7 @@ def get_available_tasks(repo_name: str, config: dict) -> list[dict]:
     g = get_github_client()
     repo = g.get_repo(repo_name)
     sprint_num = get_current_sprint()
-    sprint_label = f"sprint-{sprint_num:02d}"
+    sprint_label = f"sprint-{format_sprint_num(sprint_num, get_folder_padding())}"
 
     available = []
     issues = get_issues(repo, labels=[sprint_label], state="open")
@@ -184,7 +184,7 @@ def write_orchestrator_standup(today_summary: str, yesterday_summary: str,
     standup_dir.mkdir(parents=True, exist_ok=True)
 
     content = ORCHESTRATOR_STANDUP_TEMPLATE.format(
-        sprint_num=sprint_num,
+        sprint_num=format_sprint_num(sprint_num, get_folder_padding()),
         date=today,
         yesterday_summary=yesterday_summary or "No previous cycle data",
         today_summary=today_summary or "Monitoring agent progress",

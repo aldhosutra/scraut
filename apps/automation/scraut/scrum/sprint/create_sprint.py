@@ -6,7 +6,7 @@ import argparse
 import logging
 from datetime import date, timedelta
 from pathlib import Path
-from scraut.platform.utils.config import load_config, get_workspace_root, get_sprint_folder, get_sprint_output_folder
+from scraut.platform.utils.config import load_config, get_workspace_root, get_sprint_folder, get_sprint_output_folder, format_sprint_num, get_folder_padding
 from scraut.platform.utils.file_utils import create_if_not_exists, atomic_write, today_str
 from scraut.platform.utils.date_utils import get_sprint_dates
 from scraut.platform.github.api import get_github_client, create_milestone
@@ -44,9 +44,9 @@ def create_sprint(sprint_num: int, repo_name: str, config: dict,
     output_subdirs = ["standup/summary", "review", "incidents", "code"]
 
     if dry_run:
-        logger.info(f"[DRY RUN] Would create sprint/{sprint_num:02d}/ with subdirs: {subdirs}")
-        logger.info(f"[DRY RUN] Would create .scraut/sprint/{sprint_num:02d}/ with subdirs: {output_subdirs}")
-        logger.info(f"[DRY RUN] Would create GitHub milestone: Sprint {sprint_num:02d}")
+        logger.info(f"[DRY RUN] Would create sprint/{format_sprint_num(sprint_num, get_folder_padding())}/ with subdirs: {subdirs}")
+        logger.info(f"[DRY RUN] Would create .scraut/sprint/{format_sprint_num(sprint_num, get_folder_padding())}/ with subdirs: {output_subdirs}")
+        logger.info(f"[DRY RUN] Would create GitHub milestone: Sprint {format_sprint_num(sprint_num, get_folder_padding())}")
         return
 
     for subdir in subdirs:
@@ -60,7 +60,7 @@ def create_sprint(sprint_num: int, repo_name: str, config: dict,
 
     g = get_github_client()
     repo = g.get_repo(repo_name)
-    ms = create_milestone(repo, f"Sprint {sprint_num:02d}",
+    ms = create_milestone(repo, f"Sprint {format_sprint_num(sprint_num, get_folder_padding())}",
                           f"Sprint {sprint_num}: {start} → {end}")
 
     meta_content = META_TEMPLATE.format(
@@ -79,8 +79,8 @@ def create_sprint(sprint_num: int, repo_name: str, config: dict,
     create_if_not_exists(grooming_path,
         "# Backlog Ideas\n<!-- Append new ideas below. Anyone can add. -->\n\n")
 
-    logger.info(f"✓ Created sprint/{sprint_num:02d} input and output folder structure")
-    logger.info(f"✓ Created GitHub milestone: Sprint {sprint_num:02d} (#{ms.number})")
+    logger.info(f"✓ Created sprint/{format_sprint_num(sprint_num, get_folder_padding())} input and output folder structure")
+    logger.info(f"✓ Created GitHub milestone: Sprint {format_sprint_num(sprint_num, get_folder_padding())} (#{ms.number})")
 
 
 if __name__ == "__main__":

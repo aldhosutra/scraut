@@ -6,7 +6,7 @@ Alerts Slack with the specific overage and suggests what to defer.
 """
 import argparse
 import logging
-from scraut.platform.utils.config import load_config, get_current_sprint
+from scraut.platform.utils.config import load_config, get_current_sprint, format_sprint_num, get_folder_padding
 from scraut.platform.github.api import get_github_client, get_issues, get_sp_from_issue
 from scraut.scrum.sprint.calculate_velocity import calculate_rolling_velocity
 from scraut.platform.notifications.slack_post import post_to_slack
@@ -20,7 +20,7 @@ def check_scope_creep(repo_name: str, config: dict) -> None:
     g = get_github_client()
     repo = g.get_repo(repo_name)
     sprint_num = get_current_sprint()
-    sprint_label = f"sprint-{sprint_num:02d}"
+    sprint_label = f"sprint-{format_sprint_num(sprint_num, get_folder_padding())}"
 
     all_issues = get_issues(repo, labels=[sprint_label], state="all")
     open_issues = [i for i in all_issues if i.state == "open"]
@@ -70,7 +70,7 @@ def check_scope_creep(repo_name: str, config: dict) -> None:
 
         post_to_slack(
             webhook,
-            f"⚠️ *Sprint {sprint_num:02d} is over capacity!*\n"
+            f"⚠️ *Sprint {format_sprint_num(sprint_num, get_folder_padding())} is over capacity!*\n"
             f"Total: *{total_sp} sp* vs capacity: *{capacity} sp* "
             f"(overflow: {overage} sp)\n"
             f"Completed: {completed_sp} sp · Remaining: {remaining_sp} sp"

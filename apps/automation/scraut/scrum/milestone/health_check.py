@@ -7,7 +7,7 @@ import argparse
 import json
 import logging
 from pathlib import Path
-from scraut.platform.utils.config import load_config, get_workspace_root, get_scraut_root
+from scraut.platform.utils.config import load_config, get_workspace_root, get_scraut_root, format_sprint_num, get_folder_padding
 from scraut.platform.utils.file_utils import atomic_write, read_file
 from scraut.platform.github.api import get_github_client, get_issues, get_sp_from_issue
 from scraut.scrum.sprint.calculate_velocity import calculate_rolling_velocity
@@ -77,7 +77,7 @@ def update_milestone_health(milestone_dir: str, sprint_num: int,
     # Get sprint delivery data from GitHub
     g = get_github_client()
     repo = g.get_repo(repo_name)
-    sprint_label = f"sprint-{sprint_num:02d}"
+    sprint_label = f"sprint-{format_sprint_num(sprint_num, get_folder_padding())}"
     all_sprint_issues = get_issues(repo, labels=[sprint_label], state="all")
     closed = [i for i in all_sprint_issues if i.state == "closed"]
     planned_sp = sum(get_sp_from_issue(i) for i in all_sprint_issues)
@@ -152,7 +152,7 @@ def update_milestone_health(milestone_dir: str, sprint_num: int,
         f"## Narrative\n\n{narrative}\n\n"
         f"## Raw Data\n```json\n{json.dumps(score, indent=2)}\n```\n"
     )
-    atomic_write(health_dir / f"sprint-{sprint_num:02d}.md", health_report)
+    atomic_write(health_dir / f"sprint-{format_sprint_num(sprint_num, get_folder_padding())}.md", health_report)
 
     # Update rolling forecast
     if actual_sp > 0 and milestone_total_sp > 0:
@@ -182,7 +182,7 @@ def update_milestone_health(milestone_dir: str, sprint_num: int,
                 webhook,
                 f"🔴 *Milestone at risk!* `{milestone_path.name}` — "
                 f"Sprint {sprint_num} composite score: {score['composite']}/100\n"
-                f"View: `{milestone_path}/health/sprint-{sprint_num:02d}.md`"
+                f"View: `{milestone_path}/health/sprint-{format_sprint_num(sprint_num, get_folder_padding())}.md`"
             )
 
     logger.info(f"Health check complete. Status: {score['status']} ({score['composite']}/100)")

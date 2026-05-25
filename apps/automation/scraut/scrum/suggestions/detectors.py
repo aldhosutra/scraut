@@ -21,7 +21,7 @@ from dataclasses import dataclass, field
 from datetime import date, timedelta
 from pathlib import Path
 from typing import Optional
-from scraut.platform.utils.config import load_config, get_workspace_root, get_current_sprint, get_sprint_folder, get_sprint_output_folder
+from scraut.platform.utils.config import load_config, get_workspace_root, get_current_sprint, get_sprint_folder, get_sprint_output_folder, format_sprint_num, get_folder_padding
 from scraut.platform.utils.file_utils import read_file, extract_section
 from scraut.platform.github.api import get_github_client, get_sp_from_issue, get_issues
 from scraut.scrum.sprint.calculate_velocity import calculate_sprint_velocity, calculate_rolling_velocity
@@ -157,9 +157,9 @@ def velocity_drop_detector(repo_name: str, config: dict,
                 "completed_sp": completed,
                 "baseline_avg": avg,
                 "drop_percent": drop_pct,
-                "file": f"sprint-{s:02d}/meta.md",
+                "file": f"sprint-{format_sprint_num(s, get_folder_padding())}/meta.md",
                 "text": f"Sprint {s}: {completed} sp completed vs {avg} sp avg ({drop_pct}% below average)",
-                "date": f"sprint-{s:02d}",
+                "date": f"sprint-{format_sprint_num(s, get_folder_padding())}",
                 "author": "scraut-velocity",
                 "quote": f"{completed} sp completed vs {avg:.1f} sp baseline avg",
             })
@@ -280,7 +280,7 @@ def capacity_imbalance_detector(repo_name: str, config: dict,
     except Exception:
         return None
 
-    sprint_label = f"sprint-{sprint_num:02d}"
+    sprint_label = f"sprint-{format_sprint_num(sprint_num, get_folder_padding())}"
     member_sp = {}
     for member in config["team"]["members"]:
         login = member["login"]
@@ -312,7 +312,7 @@ def capacity_imbalance_detector(repo_name: str, config: dict,
         pct = round(sp / avg_load * 100)
         instances.append({
             "sprint": sprint_num, "date": date.today().isoformat(),
-            "file": f"sprint-{sprint_num:02d}/meta.md",
+            "file": f"sprint-{format_sprint_num(sprint_num, get_folder_padding())}/meta.md",
             "author": login,
             "text": f"{display_map.get(login, login)}: {sp} sp ({pct}% of team avg)",
             "quote": f"{display_map.get(login, login)} assigned {sp} sp vs {avg_load:.0f} avg",
@@ -321,7 +321,7 @@ def capacity_imbalance_detector(repo_name: str, config: dict,
         pct = round(sp / avg_load * 100)
         instances.append({
             "sprint": sprint_num, "date": date.today().isoformat(),
-            "file": f"sprint-{sprint_num:02d}/meta.md",
+            "file": f"sprint-{format_sprint_num(sprint_num, get_folder_padding())}/meta.md",
             "author": login,
             "text": f"{display_map.get(login, login)}: {sp} sp ({pct}% of team avg — underutilised)",
             "quote": f"{display_map.get(login, login)} assigned only {sp} sp vs {avg_load:.0f} avg",
@@ -380,8 +380,8 @@ def retro_followthrough_detector(config: dict,
             if not appeared and len(action) > 10:
                 missed_items.append({
                     "sprint": s,
-                    "date": f"sprint-{s:02d}",
-                    "file": f"sprint-{s:02d}/retrospective/summary.md",
+                    "date": f"sprint-{format_sprint_num(s, get_folder_padding())}",
+                    "file": f"sprint-{format_sprint_num(s, get_folder_padding())}/retrospective/summary.md",
                     "author": "retrospective",
                     "text": f"Sprint {s} action item not tracked in subsequent sprints: '{action[:80]}'",
                     "quote": action[:100],
@@ -468,8 +468,8 @@ def sentiment_trend_detector(config: dict,
 
     instances = [{
         "sprint": s["sprint"],
-        "date": f"sprint-{s['sprint']:02d}",
-        "file": f"sprint-{s['sprint']:02d}/standup/summary",
+        "date": f"sprint-{format_sprint_num(s["sprint"], get_folder_padding())}",
+        "file": f"sprint-{format_sprint_num(s["sprint"], get_folder_padding())}/standup/summary",
         "author": "team",
         "text": f"Sprint {s['sprint']} sentiment score: {s['score']}/10 ({s['concern_level']} concern)",
         "quote": "; ".join(s.get("signals", [])[:2]),

@@ -7,7 +7,7 @@ import argparse
 import logging
 from datetime import date, timedelta
 from pathlib import Path
-from scraut.platform.utils.config import load_config, get_workspace_root, get_current_sprint, get_sprint_folder, get_sprint_output_folder
+from scraut.platform.utils.config import load_config, get_workspace_root, get_current_sprint, get_sprint_folder, get_sprint_output_folder, format_sprint_num, get_folder_padding
 from scraut.platform.github.api import get_github_client, get_issues, get_sp_from_issue
 
 logging.basicConfig(level=logging.INFO)
@@ -27,7 +27,7 @@ def generate_burndown(sprint_num: int, repo_name: str, config: dict,
 
     g = get_github_client()
     repo = g.get_repo(repo_name)
-    sprint_label = f"sprint-{sprint_num:02d}"
+    sprint_label = f"sprint-{format_sprint_num(sprint_num, get_folder_padding())}"
     issues = get_issues(repo, labels=[sprint_label], state="all")
 
     total_sp = sum(get_sp_from_issue(i) for i in issues)
@@ -70,7 +70,7 @@ def generate_burndown(sprint_num: int, repo_name: str, config: dict,
 
     ax.set_xlabel("Date")
     ax.set_ylabel("Story Points Remaining")
-    ax.set_title(f"Sprint {sprint_num:02d} Burndown")
+    ax.set_title(f"Sprint {format_sprint_num(sprint_num, get_folder_padding())} Burndown")
     ax.legend()
     ax.grid(True, alpha=0.3)
     ax.xaxis.set_major_formatter(mdates.DateFormatter("%m/%d"))

@@ -15,7 +15,7 @@ from collections import Counter
 from datetime import date
 import re
 from pathlib import Path
-from scraut.platform.utils.config import load_config, get_workspace_root, get_current_sprint, get_sprint_folder, get_scraut_root
+from scraut.platform.utils.config import load_config, get_workspace_root, get_current_sprint, get_sprint_folder, get_scraut_root, format_sprint_num, get_folder_padding
 from scraut.platform.utils.file_utils import atomic_write, read_file, extract_section
 from scraut.scrum.sprint.calculate_velocity import (calculate_sprint_velocity,
                                                 calculate_rolling_velocity)
@@ -60,7 +60,7 @@ def generate_velocity_trends(repo_name: str, config: dict) -> None:
     for v in velocity_history:
         bar = "█" * (v["completed_sp"] // 3) if v["completed_sp"] else ""
         content += (
-            f"| Sprint {v['sprint']:02d} | {v['completed_sp']} sp {bar} | "
+            f"| Sprint {format_sprint_num(v['sprint'], get_folder_padding())} | {v['completed_sp']} sp {bar} | "
             f"{v['planned_sp']} sp | {round(v['completion_rate']*100)}% |\n"
         )
 
@@ -155,7 +155,7 @@ def generate_team_health(config: dict) -> None:
     )
     for h in health_data:
         icon = "✅" if h["status"] == "healthy" else "⚠️" if h["status"] == "watch" else "🔴"
-        content += f"| Sprint {h['sprint']:02d} | {round(h['completion_rate']*100)}% | {icon} {h['status']} |\n"
+        content += f"| Sprint {format_sprint_num(h['sprint'], get_folder_padding())} | {round(h['completion_rate']*100)}% | {icon} {h['status']} |\n"
 
     content += (
         f"\n## Notes\n"

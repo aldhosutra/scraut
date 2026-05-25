@@ -9,7 +9,7 @@ import argparse
 import logging
 from datetime import date
 from pathlib import Path
-from scraut.platform.utils.config import load_config, get_workspace_root, get_current_sprint, get_sprint_folder
+from scraut.platform.utils.config import load_config, get_workspace_root, get_current_sprint, get_sprint_folder, format_sprint_num, get_folder_padding
 from scraut.platform.utils.file_utils import atomic_write, read_file, extract_section
 from scraut.platform.github.api import (get_github_client, get_issues, get_sp_from_issue,
                                   ensure_label_exists, add_label_to_issue)
@@ -140,16 +140,16 @@ def create_planning_pr(sprint_num: int, repo_name: str, config: dict) -> None:
         date=date.today().isoformat(),
     )
 
-    branch_name = f"sprint-{sprint_num:02d}-planning"
+    branch_name = f"sprint-{format_sprint_num(sprint_num, get_folder_padding())}-planning"
     try:
         main_sha = repo.get_branch("main").commit.sha
         repo.create_git_ref(f"refs/heads/{branch_name}", main_sha)
     except Exception as e:
         logger.warning(f"Branch may already exist: {e}")
 
-    planning_path = f"workspace/sprint/{sprint_num:02d}/meta.md"
+    planning_path = f"workspace/sprint/{format_sprint_num(sprint_num, get_folder_padding())}/meta.md"
     sprint_meta_content = (
-        f"# Sprint {sprint_num:02d}\n"
+        f"# Sprint {format_sprint_num(sprint_num, get_folder_padding())}\n"
         f"- Period: TBD\n"
         f"- Goal: {sprint_goal}\n"
         f"- Team: {', '.join(m['display'] for m in config['team']['members'])}\n"
@@ -181,7 +181,7 @@ def create_planning_pr(sprint_num: int, repo_name: str, config: dict) -> None:
         )
 
     pr = repo.create_pull(
-        title=f"🎯 Sprint {sprint_num:02d} Planning — {sprint_goal[:60]}",
+        title=f"🎯 Sprint {format_sprint_num(sprint_num, get_folder_padding())} Planning — {sprint_goal[:60]}",
         body=pr_body,
         head=branch_name,
         base="main",
@@ -189,7 +189,7 @@ def create_planning_pr(sprint_num: int, repo_name: str, config: dict) -> None:
     pr.add_to_labels("sprint-planning")
     logger.info(f"Created planning PR #{pr.number}: {pr.html_url}")
 
-    sprint_label = f"sprint-{sprint_num:02d}"
+    sprint_label = f"sprint-{format_sprint_num(sprint_num, get_folder_padding())}"
     ensure_label_exists(repo, sprint_label, color="0075ca")
     for issue in selected_issues:
         add_label_to_issue(issue, sprint_label)

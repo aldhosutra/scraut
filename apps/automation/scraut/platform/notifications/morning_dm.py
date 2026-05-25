@@ -8,14 +8,14 @@ import os
 from datetime import date
 
 from scraut.platform.notifications.slack_post import send_slack_dm
-from scraut.platform.utils.config import get_current_sprint, load_config
+from scraut.platform.utils.config import get_current_sprint, load_config, format_sprint_num, get_folder_padding
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
 
 def _standup_link(repo_name: str, sprint_num: int, today: str, login: str) -> str:
-    path = f"workspace/sprint/{sprint_num:02d}/standup/{today}/{login}.md"
+    path = f"workspace/sprint/{format_sprint_num(sprint_num, get_folder_padding())}/standup/{today}/{login}.md"
     return f"https://github.com/{repo_name}/edit/main/{path}"
 
 

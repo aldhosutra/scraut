@@ -18,7 +18,7 @@ from enum import Enum
 from pathlib import Path
 from typing import Optional
 
-from scraut.platform.utils.config import get_current_sprint, get_workspace_root, get_sprint_folder, get_sprint_output_folder
+from scraut.platform.utils.config import get_current_sprint, get_workspace_root, get_sprint_folder, get_sprint_output_folder, format_sprint_num, get_folder_padding
 from scraut.platform.utils.file_utils import read_file, extract_section
 from scraut.platform.github.api import get_github_client
 
@@ -235,7 +235,7 @@ def get_pr_issue_map(repo) -> dict:
 
 def get_sprint_roadmap_issues(repo, sprint_num: int) -> set:
     """Get set of issue numbers with the sprint label from GitHub."""
-    sprint_label = f"sprint-{sprint_num:02d}"
+    sprint_label = f"sprint-{format_sprint_num(sprint_num, get_folder_padding())}"
     try:
         issues = repo.get_issues(state="all", labels=[sprint_label])
         return {i.number for i in issues}
@@ -307,7 +307,7 @@ if __name__ == "__main__":
     args = parser.parse_args()
 
     if args.config:
-        from scraut.platform.utils.config import load_config
+        from scraut.platform.utils.config import load_config, get_folder_padding
         load_config(args.config)
 
     deriver = StateDeriver(sprint_num=args.sprint, today=args.date)

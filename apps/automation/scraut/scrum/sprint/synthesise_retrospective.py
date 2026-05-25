@@ -8,7 +8,7 @@ import argparse
 import logging
 from datetime import date
 from pathlib import Path
-from scraut.platform.utils.config import load_config, get_workspace_root, get_sprint_folder, get_sprint_output_folder
+from scraut.platform.utils.config import load_config, get_workspace_root, get_sprint_folder, get_sprint_output_folder, format_sprint_num, get_folder_padding
 from scraut.platform.utils.file_utils import atomic_write, read_file, extract_section
 from scraut.platform.llm.client import complete
 from scraut.platform.llm.prompts import RETROSPECTIVE_SYNTHESIS, SYSTEM_SCRUM_ASSISTANT
@@ -101,7 +101,7 @@ def synthesise_retrospective(sprint_num: int, repo_name: str, config: dict) -> N
 
     full_summary = (
         f"<!-- BOT-GENERATED -->\n"
-        f"# Retrospective Summary — Sprint {sprint_num:02d}\n"
+        f"# Retrospective Summary — Sprint {format_sprint_num(sprint_num, get_folder_padding())}\n"
         f"*Generated: {date.today().isoformat()}*\n"
         f"*{len(member_retros)} of {len(members_map)} team members responded*\n\n"
         + (summary or "LLM synthesis unavailable. See individual entries.")
@@ -115,9 +115,9 @@ def synthesise_retrospective(sprint_num: int, repo_name: str, config: dict) -> N
     webhook = config.get("notifications", {}).get("slack_webhook")
     if webhook:
         post_to_slack(webhook,
-            f"🔄 *Sprint {sprint_num:02d} Retrospective complete*\n"
+            f"🔄 *Sprint {format_sprint_num(sprint_num, get_folder_padding())} Retrospective complete*\n"
             f"{len(member_retros)} responses synthesised. "
-            f"See `.scraut/sprint/{sprint_num:02d}/retrospective/summary.md`"
+            f"See `.scraut/sprint/{format_sprint_num(sprint_num, get_folder_padding())}/retrospective/summary.md`"
         )
 
     logger.info(f"Retrospective synthesised for sprint {sprint_num}")

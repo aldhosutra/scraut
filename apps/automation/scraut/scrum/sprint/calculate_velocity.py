@@ -5,7 +5,7 @@ Also calculates rolling average velocity over last N sprints.
 """
 import argparse
 import logging
-from scraut.platform.utils.config import load_config
+from scraut.platform.utils.config import load_config, format_sprint_num, get_folder_padding
 from scraut.platform.github.api import get_github_client, get_issues, get_sp_from_issue
 
 logging.basicConfig(level=logging.INFO)
@@ -15,7 +15,7 @@ logger = logging.getLogger(__name__)
 def calculate_sprint_velocity(sprint_num: int, repo_name: str) -> dict:
     g = get_github_client()
     repo = g.get_repo(repo_name)
-    sprint_label = f"sprint-{sprint_num:02d}"
+    sprint_label = f"sprint-{format_sprint_num(sprint_num, get_folder_padding())}"
 
     all_issues = get_issues(repo, labels=[sprint_label], state="all")
     closed = [i for i in all_issues if i.state == "closed"]
@@ -43,7 +43,7 @@ def calculate_rolling_velocity(repo_name: str, num_sprints: int = 5) -> dict:
     velocities = []
 
     for sprint_num in range(1, num_sprints + 1):
-        sprint_label = f"sprint-{sprint_num:02d}"
+        sprint_label = f"sprint-{format_sprint_num(sprint_num, get_folder_padding())}"
         try:
             closed = get_issues(repo, labels=[sprint_label], state="closed")
             if not closed:
