@@ -9,6 +9,11 @@ const sidebars = {
       label: 'What is Scraut?',
     },
     {
+      type: 'doc',
+      id: 'scrum-primer',
+      label: 'Scrum Primer',
+    },
+    {
       type: 'category',
       label: 'Getting Started',
       collapsed: false,
